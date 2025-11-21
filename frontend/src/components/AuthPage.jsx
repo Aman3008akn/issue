@@ -34,7 +34,7 @@ const AuthPage = ({ onLogin, onAdminLogin }) => {
       }
       
       // Regular user login logic (mock)
-      const user = login(formData.username, formData.password);
+      const user = login(formData.email, formData.password);
       if (user) {
         setCurrentUser(user);
         onLogin(user);
@@ -51,9 +51,13 @@ const AuthPage = ({ onLogin, onAdminLogin }) => {
           password: formData.password,
           balance: 5000 // Starting balance
         };
-        register(newUser);
-        setCurrentUser(newUser);
-        onLogin(newUser);
+        const registeredUser = register(newUser);
+        if (registeredUser) {
+          setCurrentUser(registeredUser);
+          onLogin(registeredUser);
+        } else {
+          setError('User with this email already exists. Please use a different email or login instead.');
+        }
       } else {
         setError('Please fill all fields');
       }

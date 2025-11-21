@@ -1,8 +1,17 @@
 // Mock data and game logic for the gaming platform
 
-export const MOCK_USERS = [
-  { id: '1', username: 'demo', email: 'demo@example.com', password: 'demo123', balance: 10000 }
-];
+// Get users from localStorage or use default demo user
+export const getUsers = () => {
+  const usersStr = localStorage.getItem('users');
+  return usersStr ? JSON.parse(usersStr) : [
+    { id: '1', username: 'demo', email: 'demo@example.com', password: 'demo123', balance: 10000 }
+  ];
+};
+
+// Save users to localStorage
+export const saveUsers = (users) => {
+  localStorage.setItem('users', JSON.stringify(users));
+};
 
 // Store current user in localStorage
 export const getCurrentUser = () => {
@@ -18,17 +27,27 @@ export const logout = () => {
   localStorage.removeItem('currentUser');
 };
 
-// Add the missing login function
+// Updated login function to check against users in localStorage
 export const login = (username, password) => {
-  const user = MOCK_USERS.find(
+  const users = getUsers();
+  const user = users.find(
     u => (u.username === username || u.email === username) && u.password === password
   );
   return user || null;
 };
 
-// Add the missing register function
+// Updated register function to save users to localStorage
 export const register = (newUser) => {
-  MOCK_USERS.push(newUser);
+  const users = getUsers();
+  
+  // Check if user with same email already exists
+  const existingUser = users.find(u => u.email === newUser.email);
+  if (existingUser) {
+    return null; // User already exists
+  }
+  
+  users.push(newUser);
+  saveUsers(users);
   return newUser;
 };
 
@@ -42,6 +61,14 @@ export const updateUserBalance = (newBalance) => {
   if (user) {
     user.balance = newBalance;
     setCurrentUser(user);
+    
+    // Also update in the users list
+    const users = getUsers();
+    const userIndex = users.findIndex(u => u.id === user.id);
+    if (userIndex !== -1) {
+      users[userIndex] = user;
+      saveUsers(users);
+    }
   }
 };
 
