@@ -173,15 +173,15 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
 
   const renderNumberOptions = () => (
     <div className="mb-6">
-      <h3 className="text-lg font-semibold mb-3 text-center">Select Number (Optional)</h3>
+      <h3 className="text-lg font-semibold mb-3 text-center">Select Number (1-10)</h3>
       <div className="flex justify-center gap-2 flex-wrap">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
           <button
             key={num}
             onClick={() => handleNumberSelect(num)}
-            className={`w-12 h-12 rounded-full flex items-center justify-center font-bold transition-all ${
+            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
               selectedNumber === num
-                ? 'bg-blue-600 text-white ring-4 ring-blue-300 scale-110'
+                ? 'bg-blue-600 text-white ring-2 ring-blue-300'
                 : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
             }`}
           >
@@ -190,11 +190,7 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
         ))}
         <button
           onClick={() => setSelectedNumber(null)}
-          className={`w-12 h-12 rounded-full flex items-center justify-center font-bold transition-all ${
-            selectedNumber === null
-              ? 'bg-red-600 text-white ring-4 ring-red-300 scale-110'
-              : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-          }`}
+          className="w-10 h-10 rounded-full bg-red-500 text-white text-sm font-bold hover:bg-red-600"
         >
           Clear
         </button>
@@ -249,15 +245,15 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
     <div className="text-center py-6">
       <h2 className="text-2xl font-bold mb-6">Result</h2>
       
-      <div className="flex justify-center items-center gap-6 mb-8">
-        <div className={`w-24 h-24 rounded-full flex items-center justify-center text-white font-bold text-xl ${
+      <div className="flex justify-center items-center gap-4 mb-6">
+        <div className={`w-20 h-20 rounded-full flex items-center justify-center text-white font-bold text-lg ${
           result.color === 'green' ? 'bg-green-600' :
           result.color === 'red' ? 'bg-red-600' : 'bg-purple-600'
         }`}>
           {result.color.charAt(0).toUpperCase() + result.color.slice(1)}
         </div>
-        <div className="text-4xl font-bold">+</div>
-        <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-2xl">
+        <span className="text-2xl font-bold">+</span>
+        <div className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xl">
           {result.number}
         </div>
       </div>
