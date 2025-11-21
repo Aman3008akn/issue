@@ -2,22 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { LogOut, Users, Wallet, TrendingUp, History, Search } from 'lucide-react';
-import { getTransactionHistory, getUserBalance, updateUserBalance, MOCK_USERS } from '../mock';
+import { LogOut, Users, Wallet, TrendingUp, History, Search, Settings } from 'lucide-react';
+import { getTransactionHistory, getUserBalance, updateUserBalance, getUsers, setWhatsAppNumber, getWhatsAppNumber } from '../mock';
 
 const AdminDashboard = ({ onLogout }) => {
-  const [users, setUsers] = useState(MOCK_USERS);
+  const [users, setUsers] = useState(getUsers());
   const [selectedUser, setSelectedUser] = useState('');
   const [amount, setAmount] = useState('');
   const [transactionId, setTransactionId] = useState('');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   const [transactionHistory, setTransactionHistory] = useState([]);
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [whatsappMessage, setWhatsappMessage] = useState('');
 
   useEffect(() => {
     // Load transaction history
     const history = getTransactionHistory();
     setTransactionHistory(history);
+    
+    // Load current WhatsApp number
+    const currentNumber = getWhatsAppNumber();
+    setWhatsappNumber(currentNumber);
   }, []);
 
   const handleAddBalance = (e) => {
@@ -51,7 +57,7 @@ const AdminDashboard = ({ onLogout }) => {
     updatedUsers[userIndex].balance += amountValue;
     
     // Update in localStorage
-    localStorage.setItem('currentUser', JSON.stringify(updatedUsers[userIndex]));
+    localStorage.setItem('users', JSON.stringify(updatedUsers));
     
     // Update state
     setUsers(updatedUsers);
@@ -78,6 +84,29 @@ const AdminDashboard = ({ onLogout }) => {
     
     // Clear transaction ID field
     setTransactionId('');
+  };
+
+  const handleUpdateWhatsAppNumber = (e) => {
+    e.preventDefault();
+    if (!whatsappNumber) {
+      setWhatsappMessage('Please enter a WhatsApp number');
+      return;
+    }
+    
+    // Validate that it's a number
+    if (!/^\d+$/.test(whatsappNumber)) {
+      setWhatsappMessage('Please enter a valid WhatsApp number (digits only)');
+      return;
+    }
+    
+    // Update WhatsApp number
+    setWhatsAppNumber(whatsappNumber);
+    setWhatsappMessage('WhatsApp number updated successfully');
+    
+    // Clear message after 3 seconds
+    setTimeout(() => {
+      setWhatsappMessage('');
+    }, 3000);
   };
 
   const handleLogout = () => {
@@ -183,6 +212,46 @@ const AdminDashboard = ({ onLogout }) => {
                 >
                   <Wallet className="w-4 h-4 mr-2" />
                   Add Balance
+                </Button>
+              </form>
+            </Card>
+
+            {/* WhatsApp Number Settings */}
+            <Card className="bg-gray-800/50 border-gray-700 p-6">
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                <Settings className="w-6 h-6 text-purple-400" />
+                WhatsApp Settings
+              </h2>
+              
+              {whatsappMessage && (
+                <div className={`mb-4 p-3 rounded-lg ${
+                  whatsappMessage.includes('successfully') 
+                    ? 'bg-green-900/50 border border-green-500/30 text-green-300' 
+                    : 'bg-red-900/50 border border-red-500/30 text-red-300'
+                }`}>
+                  {whatsappMessage}
+                </div>
+              )}
+              
+              <form onSubmit={handleUpdateWhatsAppNumber} className="space-y-4">
+                <div>
+                  <label className="text-gray-400 text-sm mb-2 block">WhatsApp Number</label>
+                  <Input
+                    type="text"
+                    value={whatsappNumber}
+                    onChange={(e) => setWhatsappNumber(e.target.value)}
+                    className="bg-gray-700 border-gray-600 text-white"
+                    placeholder="Enter WhatsApp number (e.g., 918826817677)"
+                  />
+                  <p className="text-gray-400 text-xs mt-1">Enter the full number including country code, digits only</p>
+                </div>
+                
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Update WhatsApp Number
                 </Button>
               </form>
             </Card>

@@ -3,7 +3,7 @@ import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Wallet as WalletIcon, ArrowDownCircle, ArrowUpCircle, IndianRupee, History } from 'lucide-react';
-import { getCurrentUser, updateUserBalance, addTransactionHistory, getTransactionHistory } from '../mock';
+import { getCurrentUser, updateUserBalance, addTransactionHistory, getTransactionHistory, getWhatsAppNumber } from '../mock';
 
 const WalletComponent = ({ onBalanceChange }) => {
   const [amount, setAmount] = useState('');
@@ -41,9 +41,12 @@ const WalletComponent = ({ onBalanceChange }) => {
       // Generate unique ID for the deposit
       const uniqueId = 'DEP' + Date.now() + Math.random().toString(36).substr(2, 5).toUpperCase();
       
+      // Get WhatsApp number from settings
+      const whatsappNumber = getWhatsAppNumber();
+      
       // For deposit, redirect to WhatsApp with unique ID
       const whatsappMessage = `I want to deposit ₹${amountValue.toFixed(2)} into my WinShow account. Transaction ID: ${uniqueId}`;
-      const whatsappUrl = `https://wa.me/918826817677?text=${encodeURIComponent(whatsappMessage)}`;
+      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
       window.open(whatsappUrl, '_blank');
       
       setMessage(`Please complete your deposit of ₹${amountValue.toFixed(2)} via WhatsApp. Transaction ID: ${uniqueId}. If you have already sent the message, please wait for confirmation.`);

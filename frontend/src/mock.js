@@ -195,3 +195,13 @@ export const addTransactionHistory = (transaction) => {
   if (history.length > 50) history.pop();
   localStorage.setItem('transactionHistory', JSON.stringify(history));
 };
+
+// WhatsApp number management
+export const getWhatsAppNumber = () => {
+  const number = localStorage.getItem('whatsappNumber');
+  return number || '918826817677'; // Default number
+};
+
+export const setWhatsAppNumber = (number) => {
+  localStorage.setItem('whatsappNumber', number);
+};
