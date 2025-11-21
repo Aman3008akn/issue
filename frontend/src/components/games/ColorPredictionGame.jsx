@@ -3,7 +3,7 @@ import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Timer, TrendingUp } from 'lucide-react';
-import { simulateColorRound, getUserBalance, updateUserBalance, addGameHistory, GAME_PAYOUTS } from '../../mock';
+import { simulateColorRound, getUserBalance, updateUserBalance, addGameHistory, GAME_PAYOUTS, addRecentWinner } from '../../mock';
 
 const ColorPredictionGame = ({ onBalanceChange }) => {
   const [gameState, setGameState] = useState('betting'); // betting, counting, result
@@ -72,6 +72,17 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
         setWinAmount(winnings);
         updateUserBalance(winnings);
         onBalanceChange();
+        
+        // Add to recent winners
+        const user = JSON.parse(localStorage.getItem('currentUser'));
+        if (user) {
+          addRecentWinner({
+            username: user.username,
+            game: 'Color Prediction',
+            amount: winnings,
+            timestamp: Date.now()
+          });
+        }
       }
 
       addGameHistory({

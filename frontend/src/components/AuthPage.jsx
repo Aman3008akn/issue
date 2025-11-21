@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Rocket, Mail, Lock, User } from 'lucide-react';
+import { Rocket, Mail, Lock, User, Gift } from 'lucide-react';
 import { login, register, setCurrentUser } from '../mock';
 
 const AuthPage = ({ onLogin, onAdminLogin }) => {
@@ -13,6 +13,16 @@ const AuthPage = ({ onLogin, onAdminLogin }) => {
     password: ''
   });
   const [error, setError] = useState('');
+  const [referralId, setReferralId] = useState('');
+
+  useEffect(() => {
+    // Check for referral ID in URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const refId = urlParams.get('ref');
+    if (refId) {
+      setReferralId(refId);
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -49,11 +59,26 @@ const AuthPage = ({ onLogin, onAdminLogin }) => {
           username: formData.username,
           email: formData.email,
           password: formData.password,
-          balance: 5000 // Starting balance
+          balance: 5000, // Starting balance
+          referred_by: referralId || null // Add referral ID if present
         };
+        
+        // If user was referred, add bonus to the referrer
+        if (referralId) {
+          // In a real implementation, this would call the backend API
+          // For now, we'll just show a message
+          console.log(`User was referred by ${referralId}`);
+        }
+        
         const registeredUser = register(newUser);
         if (registeredUser) {
           setCurrentUser(registeredUser);
+          
+          // If user was referred, show a welcome bonus message
+          if (referralId) {
+            alert('Welcome! You were referred by another user. Your referrer will receive a bonus.');
+          }
+          
           onLogin(registeredUser);
         } else {
           setError('User with this email already exists. Please use a different email or login instead.');
@@ -76,6 +101,17 @@ const AuthPage = ({ onLogin, onAdminLogin }) => {
           </div>
           <p className="text-gray-400">Your Gaming Paradise</p>
         </div>
+
+        {referralId && (
+          <div className="bg-gradient-to-r from-indigo-900/50 to-purple-900/50 border border-indigo-500/30 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-2">
+              <Gift className="w-5 h-5 text-indigo-400" />
+              <span className="text-indigo-300 text-sm">
+                You were referred by another user. Welcome bonus will be applied!
+              </span>
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-2 mb-6">
           <Button

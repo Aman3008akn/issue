@@ -3,7 +3,7 @@ import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Plane, TrendingUp, Zap, Crown, Gem, Star } from 'lucide-react';
-import { simulateAviatorRound, getUserBalance, updateUserBalance, addGameHistory } from '../../mock';
+import { simulateAviatorRound, getUserBalance, updateUserBalance, addGameHistory, addRecentWinner } from '../../mock';
 import AviatorLogo from '../AviatorLogo';
 
 const AviatorGame = ({ onBalanceChange }) => {
@@ -91,6 +91,17 @@ const AviatorGame = ({ onBalanceChange }) => {
             multiplier: newCrashPoint,
             timestamp: new Date().toISOString()
           });
+        } else if (hasBet && hasCashedOut) {
+          // Add to recent winners if user won
+          const user = JSON.parse(localStorage.getItem('currentUser'));
+          if (user) {
+            addRecentWinner({
+              username: user.username,
+              game: 'Aviator',
+              amount: winAmount,
+              timestamp: Date.now()
+            });
+          }
         }
 
         // Start new round after 3 seconds
@@ -134,6 +145,17 @@ const AviatorGame = ({ onBalanceChange }) => {
       multiplier: currentMultiplier,
       timestamp: new Date().toISOString()
     });
+
+    // Add to recent winners
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    if (user) {
+      addRecentWinner({
+        username: user.username,
+        game: 'Aviator',
+        amount: payout,
+        timestamp: Date.now()
+      });
+    }
   };
 
   return (

@@ -1,29 +1,29 @@
 // Mock data and game logic for the gaming platform
 
-// Aviator game logic - Adjusted for 2% win rate
+// Aviator game logic - Adjusted for 12% win rate
 export const simulateAviatorRound = () => {
-  // Random crash point between 1.00x and 100.00x
-  // Adjusted to make low multipliers much more common (reducing win rate to 2%)
+  // Random crash point between 1.00x and 50.00x
+  // Adjusted to make low multipliers more common (reducing win rate to 12%)
   const randomCrash = Math.random();
   let crashPoint;
   
-  // 98% chance of crashing at 1.0x - 1.5x (very low multipliers)
-  if (randomCrash < 0.98) {
-    crashPoint = 1.0 + Math.random() * 0.5; // 1.0x - 1.5x
+  // 88% chance of crashing at 1.0x - 2.0x (very low multipliers)
+  if (randomCrash < 0.88) {
+    crashPoint = 1.0 + Math.random() * 1.0; // 1.0x - 2.0x
   } 
-  // 1.5% chance of crashing at 1.5x - 3.0x (low multipliers)
-  else if (randomCrash < 0.995) {
-    crashPoint = 1.5 + Math.random() * 1.5; // 1.5x - 3.0x
+  // 10% chance of crashing at 2.0x - 5.0x (low multipliers)
+  else if (randomCrash < 0.98) {
+    crashPoint = 2.0 + Math.random() * 3.0; // 2.0x - 5.0x
   } 
-  // 0.5% chance of going higher (3.0x - 100.0x)
+  // 2% chance of going higher (5.0x - 50.0x)
   else {
-    crashPoint = 3.0 + Math.random() * 97; // 3.0x - 100.0x
+    crashPoint = 5.0 + Math.random() * 45; // 5.0x - 50.0x
   }
   
   return parseFloat(crashPoint.toFixed(2));
 };
 
-// Color prediction game logic - Adjusted for 2% win rate with numbers
+// Color prediction game logic - Adjusted for 12% win rate with numbers
 export const simulateColorRound = () => {
   // In color prediction games, numbers are typically associated with colors:
   // Red: Numbers ending in 1, 3, 7, 9 (odd numbers except 5)
@@ -33,16 +33,16 @@ export const simulateColorRound = () => {
   const random = Math.random();
   const randomNumber = Math.floor(Math.random() * 100) + 1; // 1-100
   
-  // Adjusted to reduce winning probability to 2%
-  // Red: 1%, Green: 1%, Violet: 0.5% (higher payout but much lower probability)
-  if (random < 0.01) {
+  // Adjusted to reduce winning probability to 12%
+  // Red: 5%, Green: 5%, Violet: 2% (higher payout but lower probability)
+  if (random < 0.05) {
     return {
       color: 'red',
       number: randomNumber,
       numberType: 'red' // Numbers ending in 1, 3, 7, 9
     };
   }
-  if (random < 0.02) {
+  if (random < 0.10) {
     return {
       color: 'green',
       number: randomNumber,
@@ -50,7 +50,7 @@ export const simulateColorRound = () => {
     };
   }
   
-  // 98% chance of getting violet (but violet has higher payout)
+  // 90% chance of getting violet (but violet has higher payout)
   return {
     color: 'violet',
     number: randomNumber,
@@ -58,7 +58,7 @@ export const simulateColorRound = () => {
   };
 };
 
-// Car game logic - Adjusted for 2% win rate
+// Car game logic - Adjusted for 12% win rate
 export const simulateCarRace = () => {
   const cars = [
     { id: 1, name: 'Red Racer', color: '#ef4444' },
@@ -70,12 +70,11 @@ export const simulateCarRace = () => {
   // Shuffle and assign positions
   const shuffled = [...cars].sort(() => Math.random() - 0.5);
   
-  // Adjusted to make winning positions much less likely (2% win rate)
-  // Increase times to make winning much harder
+  // Adjusted to make winning positions less likely (12% win rate)
   return shuffled.map((car, index) => ({
     ...car,
     position: index + 1,
-    time: (20.0 + Math.random() * 30).toFixed(2) // Much slower times to reduce winning chances
+    time: (8.0 + Math.random() * 12).toFixed(2) // Slower times to reduce winning chances
   }));
 };
 
@@ -83,15 +82,15 @@ export const simulateCarRace = () => {
 export const GAME_PAYOUTS = {
   aviator: (multiplier) => multiplier,
   color: {
-    red: 15,      // Increased payout to balance reduced win rate
-    green: 15,    // Increased payout to balance reduced win rate
-    violet: 40    // Increased payout to balance reduced win rate
+    red: 8,      // Increased payout to balance reduced win rate
+    green: 8,    // Increased payout to balance reduced win rate
+    violet: 20    // Increased payout to balance reduced win rate
   },
   car: {
-    1: 25,        // Increased payout to balance reduced win rate
-    2: 15,        // Increased payout to balance reduced win rate
-    3: 10,        // Increased payout to balance reduced win rate
-    4: 5          // Increased payout to balance reduced win rate
+    1: 12,        // Increased payout to balance reduced win rate
+    2: 6,        // Increased payout to balance reduced win rate
+    3: 4,        // Increased payout to balance reduced win rate
+    4: 2       // Increased payout to balance reduced win rate
   }
 };
 
@@ -204,4 +203,66 @@ export const getWhatsAppNumber = () => {
 
 export const setWhatsAppNumber = (number) => {
   localStorage.setItem('whatsappNumber', number);
+};
+
+// Recent winners notification system
+let recentWinners = [];
+
+export const addRecentWinner = (winner) => {
+  recentWinners.unshift(winner);
+  // Keep only last 10 winners
+  if (recentWinners.length > 10) recentWinners.pop();
+};
+
+export const getRecentWinners = () => {
+  return recentWinners;
+};
+
+// Referral system functions
+export const claimReferralBonus = (userId, referredUserId) => {
+  // In a real implementation, this would call the backend API
+  // For now, we'll simulate it with localStorage
+  const users = getUsers();
+  const userIndex = users.findIndex(u => u.id === userId);
+  
+  if (userIndex !== -1) {
+    // Check if this referral bonus was already claimed
+    const claimedBonuses = JSON.parse(localStorage.getItem('claimedReferralBonuses') || '[]');
+    const alreadyClaimed = claimedBonuses.some(bonus => 
+      bonus.userId === userId && bonus.referredUserId === referredUserId
+    );
+    
+    if (!alreadyClaimed) {
+      // Grant Rs. 50 bonus
+      users[userIndex].balance += 50;
+      saveUsers(users);
+      
+      // Record that this bonus was claimed
+      claimedBonuses.push({
+        userId,
+        referredUserId,
+        timestamp: new Date().toISOString()
+      });
+      localStorage.setItem('claimedReferralBonuses', JSON.stringify(claimedBonuses));
+      
+      // Add to transaction history
+      addTransactionHistory({
+        type: 'referral_bonus',
+        amount: 50,
+        description: `Referral bonus for user ${referredUserId}`,
+        timestamp: new Date().toISOString(),
+        balanceAfter: users[userIndex].balance
+      });
+      
+      return { success: true, message: 'Successfully claimed Rs. 50 referral bonus!' };
+    } else {
+      return { success: false, message: 'Referral bonus already claimed for this user.' };
+    }
+  }
+  
+  return { success: false, message: 'User not found.' };
+};
+
+export const getReferralLink = (userId) => {
+  return `${window.location.origin}/register?ref=${userId}`;
 };

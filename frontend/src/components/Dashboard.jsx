@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { Plane, Palette, Car, Wallet, LogOut, User } from 'lucide-react';
+import { Plane, Palette, Car, Wallet, LogOut, User, Share2 } from 'lucide-react';
 import { getCurrentUser, getUserBalance } from '../mock';
 import AviatorGame from './games/AviatorGame';
 import ColorPredictionGame from './games/ColorPredictionGame';
 import CarGame from './games/CarGame';
 import GameHistory from './GameHistory';
 import WalletComponent from './Wallet';
+import ReferralSystem from './ReferralSystem';
 
 const Dashboard = ({ onLogout }) => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -51,6 +52,13 @@ const Dashboard = ({ onLogout }) => {
       icon: Car,
       description: 'Bet on the fastest car!',
       gradient: 'from-blue-500 to-cyan-500'
+    },
+    {
+      id: 'referral',
+      name: 'Refer & Earn',
+      icon: Share2,
+      description: 'Share your link and earn bonuses!',
+      gradient: 'from-indigo-500 to-purple-500'
     }
   ];
 
@@ -62,6 +70,8 @@ const Dashboard = ({ onLogout }) => {
         return <ColorPredictionGame onBalanceChange={refreshBalance} />;
       case 'car':
         return <CarGame onBalanceChange={refreshBalance} />;
+      case 'referral':
+        return <ReferralSystem onBalanceChange={refreshBalance} />;
       case 'history':
         return <GameHistory />;
       case 'wallet':
@@ -77,7 +87,7 @@ const Dashboard = ({ onLogout }) => {
               <p className="text-gray-400 text-lg">Choose your game and start winning!</p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-4 gap-6">
               {games.map((game) => (
                 <Card 
                   key={game.id}
@@ -91,7 +101,7 @@ const Dashboard = ({ onLogout }) => {
                     <h3 className="text-xl font-bold text-white mb-2">{game.name}</h3>
                     <p className="text-gray-400 mb-4">{game.description}</p>
                     <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
-                      Play Now
+                      {game.id === 'referral' ? 'Share Now' : 'Play Now'}
                     </Button>
                   </div>
                 </Card>
@@ -173,7 +183,7 @@ const Dashboard = ({ onLogout }) => {
       </header>
 
       {/* Navigation */}
-      {currentView !== 'home' && currentView !== 'history' && currentView !== 'wallet' && (
+      {currentView !== 'home' && currentView !== 'history' && currentView !== 'wallet' && currentView !== 'referral' && (
         <div className="bg-gray-800/60 backdrop-blur-sm border-b border-gray-700">
           <div className="container mx-auto px-4 py-3">
             <div className="flex items-center gap-4">
