@@ -150,22 +150,40 @@ export const getUserBalance = () => {
   return user ? user.balance : 0;
 };
 
+// Improved updateUserBalance function to prevent balance glitches
 export const updateUserBalance = (amount) => {
   const user = getCurrentUser();
   if (user) {
-    // If amount is negative, it's a deduction
-    // If amount is positive, it's an addition
-    user.balance = typeof amount === 'number' ? user.balance + amount : amount;
-    setCurrentUser(user);
-    
-    // Also update in the users list
-    const users = getUsers();
-    const userIndex = users.findIndex(u => u.id === user.id);
-    if (userIndex !== -1) {
-      users[userIndex] = user;
-      saveUsers(users);
+    try {
+      // Get fresh user data to prevent race conditions
+      const users = getUsers();
+      const userIndex = users.findIndex(u => u.id === user.id);
+      
+      if (userIndex !== -1) {
+        // Calculate new balance
+        const currentBalance = users[userIndex].balance || 0;
+        const newBalance = typeof amount === 'number' ? currentBalance + amount : amount;
+        
+        // Ensure balance doesn't go negative
+        const safeBalance = Math.max(0, newBalance);
+        
+        // Update both current user and users list
+        user.balance = safeBalance;
+        users[userIndex].balance = safeBalance;
+        
+        // Save changes
+        setCurrentUser(user);
+        saveUsers(users);
+        
+        return safeBalance;
+      }
+    } catch (error) {
+      console.error('Error updating user balance:', error);
+      // Return current balance if update fails
+      return user.balance || 0;
     }
   }
+  return 0;
 };
 
 export const getGameHistory = () => {

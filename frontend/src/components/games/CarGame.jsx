@@ -76,8 +76,8 @@ const CarGame = ({ onBalanceChange }) => {
       const selectedResult = results.find(r => r.id === selectedCar);
       if (selectedResult.position === 1) {
         const payout = betAmount * GAME_PAYOUTS.car[1];
-        const balance = getUserBalance();
-        updateUserBalance(balance + payout);
+        // Update balance with winnings
+        const newBalance = updateUserBalance(payout);
         setWinAmount(payout);
         onBalanceChange();
 
@@ -119,7 +119,8 @@ const CarGame = ({ onBalanceChange }) => {
     }
 
     if (gameState === 'betting') {
-      updateUserBalance(balance - betAmount);
+      // Deduct bet amount with improved balance update
+      const newBalance = updateUserBalance(-betAmount);
       setSelectedCar(carId);
       onBalanceChange();
     }

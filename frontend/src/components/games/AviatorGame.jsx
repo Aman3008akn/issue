@@ -120,7 +120,8 @@ const AviatorGame = ({ onBalanceChange }) => {
     }
 
     if (gameState === 'waiting' || (gameState === 'flying' && multiplier < 1.5)) {
-      updateUserBalance(balance - betAmount);
+      // Deduct bet amount with improved balance update
+      const newBalance = updateUserBalance(-betAmount);
       setHasBet(true);
       onBalanceChange();
     }
@@ -129,9 +130,9 @@ const AviatorGame = ({ onBalanceChange }) => {
   const handleCashout = (currentMultiplier = multiplier) => {
     if (!hasBet || hasCashedOut || gameState !== 'flying') return;
 
-    const balance = getUserBalance();
     const payout = betAmount * currentMultiplier;
-    updateUserBalance(balance + payout);
+    // Update balance with winnings
+    const newBalance = updateUserBalance(payout);
     setWinAmount(payout);
     setHasCashedOut(true);
     onBalanceChange();

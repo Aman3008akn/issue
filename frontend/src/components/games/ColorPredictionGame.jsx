@@ -7,7 +7,7 @@ import { simulateColorRound, getUserBalance, updateUserBalance, addGameHistory, 
 
 const ColorPredictionGame = ({ onBalanceChange }) => {
   const [gameState, setGameState] = useState('betting'); // betting, counting, result
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [timeLeft, setTimeLeft] = useState(10); // Changed from 30 to 10 seconds
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedNumber, setSelectedNumber] = useState(null); // New state for number selection
   const [betAmount, setBetAmount] = useState(100);
@@ -33,7 +33,7 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
 
   const startNewRound = () => {
     setGameState('betting');
-    setTimeLeft(30);
+    setTimeLeft(10); // Changed from 30 to 10 seconds
     setSelectedColor(null);
     setSelectedNumber(null); // Reset number selection
     setResult(null);
@@ -47,7 +47,6 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
       const roundResult = simulateColorRound();
       setResult(roundResult);
       setGameState('result');
-
       // Add to history
       setHistory(prev => [roundResult.color, ...prev.slice(0, 9)]);
       
@@ -70,7 +69,8 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
       
       if (winnings > 0) {
         setWinAmount(winnings);
-        updateUserBalance(winnings);
+        // Update balance with winnings
+        const newBalance = updateUserBalance(winnings);
         onBalanceChange();
         
         // Add to recent winners
@@ -95,7 +95,6 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
         winType, // Add win type to history
         timestamp: new Date()
       });
-
       // Start new round after 3 seconds
       setTimeout(() => {
         setRoundNumber(prev => prev + 1);
@@ -113,8 +112,8 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
       return;
     }
 
-    // Deduct bet amount
-    updateUserBalance(-betAmount);
+    // Deduct bet amount with improved balance update
+    const newBalance = updateUserBalance(-betAmount);
     onBalanceChange();
 
     setSelectedColor(color);
@@ -130,8 +129,8 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
       return;
     }
 
-    // Deduct bet amount
-    updateUserBalance(-betAmount);
+    // Deduct bet amount with improved balance update
+    const newBalance = updateUserBalance(-betAmount);
     onBalanceChange();
 
     setSelectedNumber(number);
@@ -308,7 +307,6 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
           <div className="space-y-4">
             <Card className="bg-gray-800/80 border-gray-700 p-6">
               <h3 className="text-white font-bold text-xl mb-4">Bet Amount</h3>
-
               <div className="space-y-4">
                 <div>
                   <label className="text-gray-400 text-sm mb-2 block">Amount (₹)</label>
@@ -332,7 +330,6 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
                     ))}
                   </div>
                 </div>
-
                 {(selectedColor || selectedNumber) && (
                   <div className="p-4 bg-purple-900/30 rounded-lg border border-purple-500/30">
                     <div className="text-sm text-gray-400 mb-1">Your Bet</div>
