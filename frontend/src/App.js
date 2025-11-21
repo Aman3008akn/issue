@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
+import AdminDashboard from './components/AdminDashboard';
 import { getCurrentUser } from './mock';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,10 +21,17 @@ function App() {
 
   const handleLogin = () => {
     setIsAuthenticated(true);
+    setIsAdmin(false);
+  };
+
+  const handleAdminLogin = () => {
+    setIsAuthenticated(true);
+    setIsAdmin(true);
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
+    setIsAdmin(false);
   };
 
   if (loading) {
@@ -36,9 +45,13 @@ function App() {
   return (
     <div className="App">
       {isAuthenticated ? (
-        <Dashboard onLogout={handleLogout} />
+        isAdmin ? (
+          <AdminDashboard onLogout={handleLogout} />
+        ) : (
+          <Dashboard onLogout={handleLogout} />
+        )
       ) : (
-        <AuthPage onLogin={handleLogin} />
+        <AuthPage onLogin={handleLogin} onAdminLogin={handleAdminLogin} />
       )}
     </div>
   );

@@ -5,7 +5,7 @@ import { Input } from './ui/input';
 import { Rocket, Mail, Lock, User } from 'lucide-react';
 import { login, register, setCurrentUser } from '../mock';
 
-const AuthPage = ({ onLogin }) => {
+const AuthPage = ({ onLogin, onAdminLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     username: '',
@@ -26,7 +26,14 @@ const AuthPage = ({ onLogin }) => {
     setError('');
 
     if (isLogin) {
-      // Login logic (mock)
+      // Check for admin credentials first
+      if (formData.email === 'admin@gmail.com' && formData.password === 'Admin123') {
+        // Admin login
+        onAdminLogin();
+        return;
+      }
+      
+      // Regular user login logic (mock)
       const user = login(formData.username, formData.password);
       if (user) {
         setCurrentUser(user);
