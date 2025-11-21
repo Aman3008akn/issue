@@ -72,7 +72,7 @@ const GameHistory = () => {
                   
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-white font-bold">{game.game}</span>
+                      <span className="text-white font-bold">{typeof game.game === 'object' && game.game !== null ? game.game.toString() : game.game}</span>
                       <span className={`text-xs px-2 py-0.5 rounded-full ${
                         game.result === 'win' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
                       }`}>
@@ -81,24 +81,24 @@ const GameHistory = () => {
                     </div>
                     <div className="text-sm text-gray-400">
                       {game.game === 'Aviator' && (
-                        <span>Multiplier: {game.multiplier}x</span>
+                        <span>Multiplier: {typeof game.multiplier === 'object' && game.multiplier !== null ? game.multiplier.toString() : game.multiplier}x</span>
                       )}
                       {game.game === 'Color Prediction' && (
-                        <span>Choice: {game.choice} | Result: {typeof game.outcome === 'object' && game.outcome !== null ? game.outcome.color : game.outcome}</span>
+                        <span>Choice: {typeof game.choice === 'object' && game.choice !== null ? game.choice.toString() : game.choice} | Result: {typeof game.outcome === 'object' && game.outcome !== null ? game.outcome.color : game.outcome}</span>
                       )}
                       {game.game === 'Car Racing' && (
-                        <span>Car: {game.choice} | Position: {game.position}</span>
+                        <span>Car: {typeof game.choice === 'object' && game.choice !== null ? game.choice.toString() : game.choice} | Position: {typeof game.position === 'object' && game.position !== null ? game.position.toString() : game.position}</span>
                       )}
                     </div>
                   </div>
                   
                   <div className="text-right">
-                    <div className="text-sm text-gray-400">Bet: ₹{game.bet}</div>
+                    <div className="text-sm text-gray-400">Bet: ₹{typeof game.bet === 'object' && game.bet !== null ? game.bet.toString() : game.bet}</div>
                     {game.result === 'win' && (
-                      <div className="text-green-400 font-bold">+₹{game.payout.toFixed(2)}</div>
+                      <div className="text-green-400 font-bold">+₹{typeof game.payout === 'object' && game.payout !== null ? game.payout.toString() : game.payout.toFixed(2)}</div>
                     )}
                     {game.result === 'loss' && (
-                      <div className="text-red-400 font-bold">-₹{game.bet.toFixed(2)}</div>
+                      <div className="text-red-400 font-bold">-₹{typeof game.bet === 'object' && game.bet !== null ? game.bet.toString() : game.bet.toFixed(2)}</div>
                     )}
                   </div>
                   
