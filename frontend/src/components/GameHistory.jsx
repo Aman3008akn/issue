@@ -84,7 +84,7 @@ const GameHistory = () => {
                         <span>Multiplier: {game.multiplier}x</span>
                       )}
                       {game.game === 'Color Prediction' && (
-                        <span>Choice: {game.choice} | Result: {game.outcome}</span>
+                        <span>Choice: {game.choice} | Result: {typeof game.outcome === 'object' && game.outcome !== null ? game.outcome.color : game.outcome}</span>
                       )}
                       {game.game === 'Car Racing' && (
                         <span>Car: {game.choice} | Position: {game.position}</span>
