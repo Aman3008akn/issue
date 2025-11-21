@@ -1,30 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { Plane, Palette, Car, Wallet, History, LogOut, User } from 'lucide-react';
-import { getCurrentUser, logout, getUserBalance } from '../mock';
+import { Plane, Palette, Car, Wallet, LogOut, User } from 'lucide-react';
+import { getCurrentUser, getUserBalance } from '../mock';
 import AviatorGame from './games/AviatorGame';
 import ColorPredictionGame from './games/ColorPredictionGame';
 import CarGame from './games/CarGame';
 import GameHistory from './GameHistory';
 
 const Dashboard = ({ onLogout }) => {
-  const [currentView, setCurrentView] = useState('home');
-  const [user, setUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [balance, setBalance] = useState(0);
+  const [currentView, setCurrentView] = useState('home');
 
   useEffect(() => {
-    const currentUser = getCurrentUser();
-    setUser(currentUser);
-    setBalance(getUserBalance());
+    const user = getCurrentUser();
+    setCurrentUser(user);
+    refreshBalance();
   }, []);
 
   const refreshBalance = () => {
-    setBalance(getUserBalance());
+    const userBalance = getUserBalance();
+    setBalance(userBalance);
   };
 
   const handleLogout = () => {
-    logout();
+    setCurrentUser(null);
     onLogout();
   };
 
@@ -68,30 +69,25 @@ const Dashboard = ({ onLogout }) => {
           <div className="space-y-6">
             <div className="text-center py-8">
               <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent mb-4">
-                Welcome to 1WIN Casino
+                Welcome to <strong>WinShow</strong> Casino
               </h1>
               <p className="text-gray-400 text-lg">Choose your game and start winning!</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
               {games.map((game) => (
-                <Card
+                <Card 
                   key={game.id}
-                  className="group bg-gray-800/50 backdrop-blur-sm border-gray-700 hover:border-purple-500 transition-all duration-300 hover:scale-105 cursor-pointer overflow-hidden"
+                  className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 border-gray-700 hover:border-purple-500/50 transition-all duration-300 cursor-pointer group"
                   onClick={() => setCurrentView(game.id)}
                 >
-                  <div className={`h-2 bg-gradient-to-r ${game.gradient}`} />
                   <div className="p-6">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className={`p-3 rounded-lg bg-gradient-to-br ${game.gradient}`}>
-                        <game.icon className="w-8 h-8 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="text-2xl font-bold text-white">{game.name}</h3>
-                        <p className="text-gray-400 text-sm">{game.description}</p>
-                      </div>
+                    <div className={`p-3 rounded-lg bg-gradient-to-r ${game.gradient} w-12 h-12 mb-4 flex items-center justify-center`}>
+                      <game.icon className="w-6 h-6 text-white" />
                     </div>
-                    <Button className={`w-full bg-gradient-to-r ${game.gradient} hover:opacity-90`}>
+                    <h3 className="text-xl font-bold text-white mb-2">{game.name}</h3>
+                    <p className="text-gray-400 mb-4">{game.description}</p>
+                    <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
                       Play Now
                     </Button>
                   </div>
@@ -132,24 +128,27 @@ const Dashboard = ({ onLogout }) => {
                 <Plane className="w-6 h-6 text-white" />
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                1WIN
+                <strong>WinShow</strong>
               </span>
             </div>
 
             <div className="flex items-center gap-4">
               <Card className="bg-gray-700/50 border-gray-600 px-4 py-2 flex items-center gap-2">
                 <Wallet className="w-5 h-5 text-yellow-400" />
-                <span className="text-white font-bold">₹{balance.toFixed(2)}</span>
+                <div>
+                  <div className="text-xs text-gray-400">Balance</div>
+                  <div className="text-white font-bold">₹{balance.toFixed(2)}</div>
+                </div>
               </Card>
-
+              
               <Button
                 onClick={() => setCurrentView('history')}
                 variant="ghost"
                 className="text-gray-300 hover:text-white"
               >
-                <History className="w-5 h-5" />
+                <User className="w-5 h-5" />
               </Button>
-
+              
               <Button
                 onClick={handleLogout}
                 variant="ghost"
