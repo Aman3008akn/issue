@@ -19,11 +19,13 @@ const AviatorGame = ({ onBalanceChange }) => {
 
   useEffect(() => {
     // Start first round after 2 seconds
-    setTimeout(() => {
+    const timer = setTimeout(() => {
+      setGameState('waiting');
       startNewRound();
     }, 2000);
 
     return () => {
+      clearTimeout(timer);
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
@@ -35,6 +37,8 @@ const AviatorGame = ({ onBalanceChange }) => {
     setMultiplier(1.0);
     setHasCashedOut(false);
     setWinAmount(0);
+    // Reset bet status for new round
+    setHasBet(false);
 
     // Animate multiplier
     let current = 1.0;
@@ -67,8 +71,6 @@ const AviatorGame = ({ onBalanceChange }) => {
           });
         }
 
-        setHasBet(false);
-
         // Start new round after 3 seconds
         setTimeout(() => {
           startNewRound();
@@ -92,7 +94,7 @@ const AviatorGame = ({ onBalanceChange }) => {
   };
 
   const handleCashout = (currentMultiplier = multiplier) => {
-    if (!hasBet || hasCashedOut) return;
+    if (!hasBet || hasCashedOut || gameState !== 'flying') return;
 
     const balance = getUserBalance();
     const payout = betAmount * currentMultiplier;
@@ -135,6 +137,11 @@ const AviatorGame = ({ onBalanceChange }) => {
                     {hasCashedOut && (
                       <div className="text-2xl text-green-400">
                         You won ₹{winAmount.toFixed(2)}!
+                      </div>
+                    )}
+                    {!hasBet && !hasCashedOut && (
+                      <div className="text-2xl text-red-400">
+                        Better luck next time!
                       </div>
                     )}
                   </div>
@@ -233,13 +240,20 @@ const AviatorGame = ({ onBalanceChange }) => {
                 >
                   Place Bet
                 </Button>
+              ) : hasCashedOut ? (
+                <Button
+                  className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                  disabled
+                >
+                  Cashed Out!
+                </Button>
               ) : (
                 <Button
                   onClick={() => handleCashout()}
                   className="w-full bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 animate-pulse"
-                  disabled={hasCashedOut || gameState !== 'flying'}
+                  disabled={gameState !== 'flying'}
                 >
-                  {hasCashedOut ? 'Cashed Out!' : 'Cash Out'}
+                  Cash Out
                 </Button>
               )}
             </div>
