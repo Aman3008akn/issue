@@ -102,7 +102,7 @@ const WalletComponent = ({ onBalanceChange }) => {
         <div className="flex items-center justify-between">
           <div>
             <div className="text-gray-400 text-sm mb-1">Current Balance</div>
-            <div className="text-4xl font-bold text-white">₹{balance.toFixed(2)}</div>
+            <div className="text-4xl font-bold text-white">₹{(typeof balance === 'number' ? balance : 0).toFixed(2)}</div>
           </div>
           <IndianRupee className="w-12 h-12 text-purple-400" />
         </div>
@@ -228,12 +228,12 @@ const WalletComponent = ({ onBalanceChange }) => {
                       </div>
                       <div className="text-sm text-gray-300">
                         {transaction.type === 'deposit' ? (
-                          <span>Amount: ₹{transaction.amount.toFixed(2)}</span>
+                          <span>Amount: ₹{(typeof transaction.amount === 'number' ? transaction.amount : 0).toFixed(2)}</span>
                         ) : (
                           <div>
-                            <div>Amount: ₹{transaction.amount.toFixed(2)}</div>
-                            <div>Fee: ₹{transaction.fee.toFixed(2)}</div>
-                            <div className="text-red-400">Net: ₹{transaction.amountAfterFee.toFixed(2)}</div>
+                            <div>Amount: ₹{(typeof transaction.amount === 'number' ? transaction.amount : 0).toFixed(2)}</div>
+                            <div>Fee: ₹{(typeof transaction.fee === 'number' ? transaction.fee : 0).toFixed(2)}</div>
+                            <div className="text-red-400">Net: ₹{(typeof transaction.amountAfterFee === 'number' ? transaction.amountAfterFee : 0).toFixed(2)}</div>
                           </div>
                         )}
                       </div>
@@ -244,7 +244,7 @@ const WalletComponent = ({ onBalanceChange }) => {
                       <div className={`font-bold ${
                         transaction.type === 'deposit' ? 'text-green-400' : 'text-red-400'
                       }`}>
-                        ₹{transaction.balanceAfter.toFixed(2)}
+                        ₹{(typeof transaction.balanceAfter === 'number' ? transaction.balanceAfter : 0).toFixed(2)}
                       </div>
                     </div>
                   </div>
