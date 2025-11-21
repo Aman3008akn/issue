@@ -140,7 +140,7 @@ const Dashboard = ({ onLogout }) => {
                 <Wallet className="w-5 h-5 text-yellow-400" />
                 <div>
                   <div className="text-xs text-gray-400">Balance</div>
-                  <div className="text-white font-bold">₹{balance.toFixed(2)}</div>
+                  <div className="text-white font-bold">₹{(typeof balance === 'number' ? balance : 0).toFixed(2)}</div>
                 </div>
               </Card>
               
