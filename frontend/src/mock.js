@@ -23,38 +23,65 @@ export const simulateAviatorRound = () => {
   return parseFloat(crashPoint.toFixed(2));
 };
 
-// Color prediction game logic - Adjusted for 12% win rate with numbers
-export const simulateColorRound = () => {
+// Color prediction game logic - Fixed to ensure numbers are between 1-10 and improve win rate
+export const simulateColorRound = (selectedColor = null) => {
   // In color prediction games, numbers are typically associated with colors:
   // Red: Numbers ending in 1, 3, 7, 9 (odd numbers except 5)
   // Green: Numbers ending in 2, 4, 6, 8 (even numbers)
   // Violet: Numbers ending in 0, 5 (special numbers)
   
-  const random = Math.random();
-  const randomNumber = Math.floor(Math.random() * 100) + 1; // 1-100
+  // Generate a number between 1-10
+  const randomNumber = Math.floor(Math.random() * 10) + 1; // 1-10
   
-  // Adjusted to reduce winning probability to 12%
-  // Red: 5%, Green: 5%, Violet: 2% (higher payout but lower probability)
-  if (random < 0.05) {
-    return {
-      color: 'red',
-      number: randomNumber,
-      numberType: 'red' // Numbers ending in 1, 3, 7, 9
-    };
-  }
-  if (random < 0.10) {
-    return {
-      color: 'green',
-      number: randomNumber,
-      numberType: 'green' // Numbers ending in 2, 4, 6, 8
-    };
+  // If user selected red, favor green (and vice versa) to make it more challenging
+  // Only allow user to win 2-3 times out of 10
+  const winChance = Math.random();
+  const shouldUserWin = winChance < 0.25; // 25% chance to win (about 2-3 times out of 10)
+  
+  // Determine color based on number and user selection
+  let color;
+  if (selectedColor) {
+    // If user selected a color, make it harder to win
+    if (shouldUserWin) {
+      // User wins - match their selection
+      color = selectedColor;
+    } else {
+      // User loses - give opposite color or violet
+      if (selectedColor === 'red') {
+        color = 'green'; // If user selected red, give green
+      } else if (selectedColor === 'green') {
+        color = 'red'; // If user selected green, give red
+      } else {
+        // If user selected violet, give red or green
+        color = Math.random() < 0.5 ? 'red' : 'green';
+      }
+    }
+  } else {
+    // No selection - random color with bias toward violet
+    const random = Math.random();
+    if (random < 0.1) {
+      color = 'red'; // 10% chance
+    } else if (random < 0.2) {
+      color = 'green'; // 10% chance
+    } else {
+      color = 'violet'; // 80% chance
+    }
   }
   
-  // 90% chance of getting violet (but violet has higher payout)
+  // Assign number type based on color
+  let numberType;
+  if (color === 'red') {
+    numberType = 'red'; // Numbers ending in 1, 3, 7, 9
+  } else if (color === 'green') {
+    numberType = 'green'; // Numbers ending in 2, 4, 6, 8
+  } else {
+    numberType = 'violet'; // Numbers ending in 0, 5
+  }
+  
   return {
-    color: 'violet',
+    color: color,
     number: randomNumber,
-    numberType: 'violet' // Numbers ending in 0, 5
+    numberType: numberType
   };
 };
 
@@ -236,7 +263,7 @@ export const getRecentWinners = () => {
   return recentWinners;
 };
 
-// Referral system functions
+// Referral system functions - Updated to Rs. 500 bonus
 export const claimReferralBonus = (userId, referredUserId) => {
   // In a real implementation, this would call the backend API
   // For now, we'll simulate it with localStorage
@@ -251,8 +278,8 @@ export const claimReferralBonus = (userId, referredUserId) => {
     );
     
     if (!alreadyClaimed) {
-      // Grant Rs. 50 bonus
-      users[userIndex].balance += 50;
+      // Grant Rs. 500 bonus (updated from Rs. 50)
+      users[userIndex].balance += 500;
       saveUsers(users);
       
       // Record that this bonus was claimed
@@ -266,13 +293,13 @@ export const claimReferralBonus = (userId, referredUserId) => {
       // Add to transaction history
       addTransactionHistory({
         type: 'referral_bonus',
-        amount: 50,
+        amount: 500,
         description: `Referral bonus for user ${referredUserId}`,
         timestamp: new Date().toISOString(),
         balanceAfter: users[userIndex].balance
       });
       
-      return { success: true, message: 'Successfully claimed Rs. 50 referral bonus!' };
+      return { success: true, message: 'Successfully claimed Rs. 500 referral bonus!' };
     } else {
       return { success: false, message: 'Referral bonus already claimed for this user.' };
     }

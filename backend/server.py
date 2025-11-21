@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -6,7 +6,7 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
-from typing import List
+from typing import List, Optional
 import uuid
 from datetime import datetime, timezone
 
@@ -37,6 +37,36 @@ class StatusCheck(BaseModel):
 class StatusCheckCreate(BaseModel):
     client_name: str
 
+class ReferralBonusRequest(BaseModel):
+    user_id: str
+    referred_user_id: str
+
+class ReferralBonusResponse(BaseModel):
+    success: bool
+    message: str
+    bonus_amount: float = 0.0
+
+class UserCreate(BaseModel):
+    username: str
+    email: str
+    password: str
+    referred_by: Optional[str] = None
+
+class User(BaseModel):
+    id: str
+    username: str
+    email: str
+    password: str
+    balance: float
+    referred_by: Optional[str] = None
+
+class UserResponse(BaseModel):
+    id: str
+    username: str
+    email: str
+    balance: float
+    referred_by: Optional[str] = None
+
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
 async def root():
@@ -65,6 +95,181 @@ async def get_status_checks():
             check['timestamp'] = datetime.fromisoformat(check['timestamp'])
     
     return status_checks
+
+@api_router.post("/users", response_model=UserResponse)
+async def create_user(user_data: UserCreate):
+    """
+    Create a new user and handle referral bonuses.
+    """
+    try:
+        # Check if user with this email already exists
+        existing_user = await db.users.find_one({"email": user_data.email})
+        if existing_user:
+            raise HTTPException(status_code=400, detail="User with this email already exists")
+        
+        # Create new user
+        user_id = str(uuid.uuid4())
+        user = User(
+            id=user_id,
+            username=user_data.username,
+            email=user_data.email,
+            password=user_data.password,  # In production, hash the password
+            balance=5000.0,  # Starting balance
+            referred_by=user_data.referred_by
+        )
+        
+        # Save user to database
+        user_dict = user.model_dump()
+        await db.users.insert_one(user_dict)
+        
+        # If user was referred, grant bonus to referrer
+        if user_data.referred_by:
+            await grant_referral_bonus_internal(user_data.referred_by, user_id)
+        
+        # Return user without password
+        return UserResponse(
+            id=user.id,
+            username=user.username,
+            email=user.email,
+            balance=user.balance,
+            referred_by=user.referred_by
+        )
+        
+    except Exception as e:
+        logging.error(f"Error creating user: {str(e)}")
+        raise HTTPException(status_code=500, detail="An error occurred while creating the user")
+
+async def grant_referral_bonus_internal(user_id: str, referred_user_id: str):
+    """
+    Internal function to grant referral bonus.
+    """
+    try:
+        # Check if the referred user exists and was actually referred
+        referred_user = await db.users.find_one({"id": referred_user_id, "referred_by": user_id})
+        
+        if not referred_user:
+            return
+        
+        # Check if bonus was already granted for this referral
+        existing_bonus = await db.referral_bonuses.find_one({
+            "user_id": user_id,
+            "referred_user_id": referred_user_id
+        })
+        
+        if existing_bonus:
+            return
+        
+        # Grant the bonus (Rs. 500 in this example)
+        bonus_amount = 500.0
+        
+        # Update user's balance
+        user = await db.users.find_one({"id": user_id})
+        if user:
+            new_balance = user.get("balance", 0) + bonus_amount
+            await db.users.update_one(
+                {"id": user_id},
+                {"$set": {"balance": new_balance}}
+            )
+            
+            # Record the bonus transaction
+            bonus_record = {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "referred_user_id": referred_user_id,
+                "bonus_amount": bonus_amount,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            await db.referral_bonuses.insert_one(bonus_record)
+            
+            # Add transaction to history
+            transaction = {
+                "type": "referral_bonus",
+                "amount": bonus_amount,
+                "description": f"Referral bonus for user {referred_user_id}",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "balance_after": new_balance
+            }
+            await db.transaction_history.insert_one(transaction)
+            
+    except Exception as e:
+        logging.error(f"Error granting referral bonus: {str(e)}")
+
+@api_router.post("/referral-bonus", response_model=ReferralBonusResponse)
+async def grant_referral_bonus(request: ReferralBonusRequest):
+    """
+    Grant a referral bonus to a user for bringing in a new user.
+    """
+    try:
+        # Check if the referred user exists and was actually referred
+        referred_user = await db.users.find_one({"id": request.referred_user_id, "referred_by": request.user_id})
+        
+        if not referred_user:
+            return ReferralBonusResponse(
+                success=False,
+                message="Invalid referral or user not found"
+            )
+        
+        # Check if bonus was already granted for this referral
+        existing_bonus = await db.referral_bonuses.find_one({
+            "user_id": request.user_id,
+            "referred_user_id": request.referred_user_id
+        })
+        
+        if existing_bonus:
+            return ReferralBonusResponse(
+                success=False,
+                message="Referral bonus already granted for this user"
+            )
+        
+        # Grant the bonus (Rs. 500 in this example)
+        bonus_amount = 500.0
+        
+        # Update user's balance
+        user = await db.users.find_one({"id": request.user_id})
+        if user:
+            new_balance = user.get("balance", 0) + bonus_amount
+            await db.users.update_one(
+                {"id": request.user_id},
+                {"$set": {"balance": new_balance}}
+            )
+            
+            # Record the bonus transaction
+            bonus_record = {
+                "id": str(uuid.uuid4()),
+                "user_id": request.user_id,
+                "referred_user_id": request.referred_user_id,
+                "bonus_amount": bonus_amount,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            await db.referral_bonuses.insert_one(bonus_record)
+            
+            # Add transaction to history
+            transaction = {
+                "type": "referral_bonus",
+                "amount": bonus_amount,
+                "description": f"Referral bonus for user {request.referred_user_id}",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "balance_after": new_balance
+            }
+            await db.transaction_history.insert_one(transaction)
+            
+            return ReferralBonusResponse(
+                success=True,
+                message=f"Successfully granted Rs. {bonus_amount} referral bonus",
+                bonus_amount=bonus_amount
+            )
+        else:
+            return ReferralBonusResponse(
+                success=False,
+                message="User not found"
+            )
+            
+    except Exception as e:
+        logging.error(f"Error granting referral bonus: {str(e)}")
+        return ReferralBonusResponse(
+            success=False,
+            message="An error occurred while processing the referral bonus"
+        )
 
 # Include the router in the main app
 app.include_router(api_router)
