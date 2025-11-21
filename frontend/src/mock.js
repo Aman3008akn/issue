@@ -96,16 +96,39 @@ export const simulateAviatorRound = () => {
   return parseFloat(crashPoint.toFixed(2));
 };
 
-// Color prediction game logic - Adjusted for 10-20% win rate
+// Color prediction game logic - Adjusted for 10-20% win rate with numbers
 export const simulateColorRound = () => {
-  const colors = ['red', 'green', 'violet'];
+  // In color prediction games, numbers are typically associated with colors:
+  // Red: Numbers ending in 1, 3, 7, 9 (odd numbers except 5)
+  // Green: Numbers ending in 2, 4, 6, 8 (even numbers)
+  // Violet: Numbers ending in 0, 5 (special numbers)
+  
   const random = Math.random();
+  const randomNumber = Math.floor(Math.random() * 100) + 1; // 1-100
   
   // Adjusted to reduce winning probability to 10-20%
   // Red: 15%, Green: 15%, Violet: 5% (higher payout but lower probability)
-  if (random < 0.15) return 'red';
-  if (random < 0.30) return 'green';
-  return 'violet'; // 70% chance of getting violet (but violet has higher payout)
+  if (random < 0.15) {
+    return {
+      color: 'red',
+      number: randomNumber,
+      numberType: 'red' // Numbers ending in 1, 3, 7, 9
+    };
+  }
+  if (random < 0.30) {
+    return {
+      color: 'green',
+      number: randomNumber,
+      numberType: 'green' // Numbers ending in 2, 4, 6, 8
+    };
+  }
+  
+  // 70% chance of getting violet (but violet has higher payout)
+  return {
+    color: 'violet',
+    number: randomNumber,
+    numberType: 'violet' // Numbers ending in 0, 5
+  };
 };
 
 // Car game logic - Adjusted for 10-20% win rate

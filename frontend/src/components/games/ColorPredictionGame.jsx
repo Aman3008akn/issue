@@ -51,8 +51,8 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
 
       // Calculate win/loss
       if (selectedColor) {
-        if (selectedColor === roundResult) {
-          const payout = betAmount * GAME_PAYOUTS.color[roundResult];
+        if (selectedColor === roundResult.color) {
+          const payout = betAmount * GAME_PAYOUTS.color[roundResult.color];
           const balance = getUserBalance();
           updateUserBalance(balance + payout);
           setWinAmount(payout);
@@ -65,7 +65,8 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
             result: 'win',
             payout: payout,
             choice: selectedColor,
-            outcome: roundResult,
+            outcome: roundResult.color,
+            number: roundResult.number,
             timestamp: new Date().toISOString()
           });
         } else {
@@ -75,7 +76,8 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
             bet: betAmount,
             result: 'loss',
             choice: selectedColor,
-            outcome: roundResult,
+            outcome: roundResult.color,
+            number: roundResult.number,
             timestamp: new Date().toISOString()
           });
         }
@@ -158,10 +160,15 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
               <div className="relative h-80 flex items-center justify-center">
                 {gameState === 'result' ? (
                   <div className="text-center space-y-6">
-                    <div className="text-3xl text-gray-400 mb-4">Winning Color</div>
-                    <div className={`w-40 h-40 mx-auto rounded-full ${getColorBg(result)} animate-pulse shadow-2xl`} />
-                    <div className="text-4xl font-bold text-white uppercase">{result}</div>
-                    {selectedColor === result ? (
+                    <div className="text-3xl text-gray-400 mb-4">Winning Color & Number</div>
+                    <div className="flex items-center justify-center gap-6">
+                      <div className={`w-40 h-40 mx-auto rounded-full ${getColorBg(result.color)} animate-pulse shadow-2xl`} />
+                      <div className="text-6xl font-bold text-white">
+                        {result.number}
+                      </div>
+                    </div>
+                    <div className="text-4xl font-bold text-white uppercase">{result.color}</div>
+                    {selectedColor === result.color ? (
                       <div className="text-3xl text-green-400 font-bold animate-bounce">
                         YOU WON ₹{winAmount.toFixed(2)}!
                       </div>
@@ -226,12 +233,14 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
               <h3 className="text-white font-bold">Recent Results</h3>
             </div>
             <div className="flex gap-2 flex-wrap">
-              {history.map((color, index) => (
+              {history.map((result, index) => (
                 <div
                   key={index}
-                  className={`w-10 h-10 rounded-full ${getColorBg(color)}`}
-                  title={color}
-                />
+                  className={`w-16 h-16 rounded-full ${getColorBg(result.color)} flex items-center justify-center text-white font-bold`}
+                  title={`${result.color} - ${result.number}`}
+                >
+                  {result.number}
+                </div>
               ))}
             </div>
           </Card>
