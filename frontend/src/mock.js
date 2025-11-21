@@ -59,6 +59,20 @@ export const addGameHistory = (game) => {
   localStorage.setItem('gameHistory', JSON.stringify(history));
 };
 
+// Mock transaction history
+export const getTransactionHistory = () => {
+  const historyStr = localStorage.getItem('transactionHistory');
+  return historyStr ? JSON.parse(historyStr) : [];
+};
+
+export const addTransactionHistory = (transaction) => {
+  const history = getTransactionHistory();
+  history.unshift(transaction);
+  // Keep only last 50 transactions
+  if (history.length > 50) history.pop();
+  localStorage.setItem('transactionHistory', JSON.stringify(history));
+};
+
 // Aviator game logic - Adjusted for 10-20% win rate
 export const simulateAviatorRound = () => {
   // Random crash point between 1.00x and 50.00x

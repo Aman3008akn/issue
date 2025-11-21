@@ -7,6 +7,7 @@ import AviatorGame from './games/AviatorGame';
 import ColorPredictionGame from './games/ColorPredictionGame';
 import CarGame from './games/CarGame';
 import GameHistory from './GameHistory';
+import WalletComponent from './Wallet'; // Import the new Wallet component
 
 const Dashboard = ({ onLogout }) => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -63,6 +64,8 @@ const Dashboard = ({ onLogout }) => {
         return <CarGame onBalanceChange={refreshBalance} />;
       case 'history':
         return <GameHistory />;
+      case 'wallet':
+        return <WalletComponent onBalanceChange={refreshBalance} />;
       case 'home':
       default:
         return (
@@ -142,6 +145,14 @@ const Dashboard = ({ onLogout }) => {
               </Card>
               
               <Button
+                onClick={() => setCurrentView('wallet')}
+                variant="ghost"
+                className="text-gray-300 hover:text-white"
+              >
+                <Wallet className="w-5 h-5" />
+              </Button>
+              
+              <Button
                 onClick={() => setCurrentView('history')}
                 variant="ghost"
                 className="text-gray-300 hover:text-white"
@@ -162,7 +173,7 @@ const Dashboard = ({ onLogout }) => {
       </header>
 
       {/* Navigation */}
-      {currentView !== 'home' && currentView !== 'history' && (
+      {currentView !== 'home' && currentView !== 'history' && currentView !== 'wallet' && (
         <div className="bg-gray-800/60 backdrop-blur-sm border-b border-gray-700">
           <div className="container mx-auto px-4 py-3">
             <div className="flex items-center gap-4">
