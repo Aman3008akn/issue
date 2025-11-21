@@ -113,3 +113,10 @@ code {
         border-bottom-color: inherit;
     }
 }
+div[title*="Emergent"],
+.emergent-badge,
+[data-emergent-branding] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}

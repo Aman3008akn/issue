@@ -222,8 +222,8 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
                 {history.map((color, index) => (
                   <div
                     key={index}
-                    className={`w-10 h-10 rounded-full ${getColorBg(typeof color === 'object' && color !== null ? color.color : color)}`}
-                    title={typeof color === 'object' && color !== null ? color.color : color}
+                    className={`w-10 h-10 rounded-full ${getColorBg(color)}`}
+                    title={color}
                   />
                 ))}
               </div>
