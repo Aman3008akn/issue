@@ -9,6 +9,7 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
   const [gameState, setGameState] = useState('betting'); // betting, counting, result
   const [timeLeft, setTimeLeft] = useState(30);
   const [selectedColor, setSelectedColor] = useState(null);
+  const [selectedNumber, setSelectedNumber] = useState('');
   const [betAmount, setBetAmount] = useState(100);
   const [result, setResult] = useState(null);
   const [winAmount, setWinAmount] = useState(0);
@@ -34,6 +35,7 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
     setGameState('betting');
     setTimeLeft(30);
     setSelectedColor(null);
+    setSelectedNumber('');
     setResult(null);
     setWinAmount(0);
   };
@@ -51,8 +53,19 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
 
       // Calculate win/loss
       if (selectedColor) {
+        let payout = 0;
+        let isNumberMatch = false;
+        
         if (selectedColor === roundResult.color) {
-          const payout = betAmount * GAME_PAYOUTS.color[roundResult.color];
+          // Base payout for color match
+          payout = betAmount * GAME_PAYOUTS.color[roundResult.color];
+          
+          // Check if number also matches for double payout
+          if (selectedNumber && parseInt(selectedNumber) === roundResult.number) {
+            payout = payout * 2; // Double the payout for number match
+            isNumberMatch = true;
+          }
+          
           const balance = getUserBalance();
           updateUserBalance(balance + payout);
           setWinAmount(payout);
@@ -65,8 +78,10 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
             result: 'win',
             payout: payout,
             choice: selectedColor,
+            numberChoice: selectedNumber ? parseInt(selectedNumber) : null,
             outcome: roundResult.color,
             number: roundResult.number,
+            isNumberMatch: isNumberMatch,
             timestamp: new Date().toISOString()
           });
         } else {
@@ -76,8 +91,10 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
             bet: betAmount,
             result: 'loss',
             choice: selectedColor,
+            numberChoice: selectedNumber ? parseInt(selectedNumber) : null,
             outcome: roundResult.color,
             number: roundResult.number,
+            isNumberMatch: false,
             timestamp: new Date().toISOString()
           });
         }
@@ -171,6 +188,9 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
                     {selectedColor === result.color ? (
                       <div className="text-3xl text-green-400 font-bold animate-bounce">
                         YOU WON ₹{winAmount.toFixed(2)}!
+                        {selectedNumber && parseInt(selectedNumber) === result.number && (
+                          <div className="text-xl">+ Number Match Bonus!</div>
+                        )}
                       </div>
                     ) : selectedColor ? (
                       <div className="text-2xl text-red-400">
@@ -275,6 +295,24 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
                 </div>
               </div>
 
+              {/* Number Selection */}
+              <div>
+                <label className="text-gray-400 text-sm mb-2 block">Select Number (Optional)</label>
+                <Input
+                  type="number"
+                  value={selectedNumber}
+                  onChange={(e) => setSelectedNumber(e.target.value)}
+                  className="bg-gray-700 border-gray-600 text-white"
+                  placeholder="1-100"
+                  min="1"
+                  max="100"
+                  disabled={selectedColor !== null}
+                />
+                <div className="text-xs text-gray-400 mt-1">
+                  Match the number for 2x payout! (1-100)
+                </div>
+              </div>
+
               {selectedColor && (
                 <div className="p-4 bg-purple-900/30 rounded-lg border border-purple-500/30">
                   <div className="text-sm text-gray-400 mb-1">Your Bet</div>
@@ -282,6 +320,9 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
                     <div className="flex items-center gap-2">
                       <div className={`w-6 h-6 rounded-full ${getColorBg(selectedColor)}`} />
                       <span className="text-white font-bold uppercase">{selectedColor}</span>
+                      {selectedNumber && (
+                        <span className="text-yellow-400 font-bold">#{selectedNumber}</span>
+                      )}
                     </div>
                     <span className="text-yellow-400 font-bold">₹{betAmount}</span>
                   </div>
@@ -313,6 +354,10 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
                   <span>Violet</span>
                 </div>
                 <span className="font-bold text-yellow-400">4.5x</span>
+              </div>
+              <div className="flex items-center justify-between text-gray-300 mt-2 pt-2 border-t border-gray-700">
+                <span>Number Match Bonus</span>
+                <span className="font-bold text-yellow-400">2x</span>
               </div>
             </div>
           </Card>
