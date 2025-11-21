@@ -6,7 +6,7 @@ import { LogOut, Users, Wallet, TrendingUp, History, Search, Settings } from 'lu
 import { getTransactionHistory, getUserBalance, updateUserBalance, getUsers, setWhatsAppNumber, getWhatsAppNumber } from '../mock';
 
 const AdminDashboard = ({ onLogout }) => {
-  const [users, setUsers] = useState(getUsers());
+  const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState('');
   const [amount, setAmount] = useState('');
   const [transactionId, setTransactionId] = useState('');
@@ -17,9 +17,13 @@ const AdminDashboard = ({ onLogout }) => {
   const [whatsappMessage, setWhatsappMessage] = useState('');
 
   useEffect(() => {
+    // Load users
+    const usersData = getUsers();
+    setUsers(Array.isArray(usersData) ? usersData : []);
+    
     // Load transaction history
     const history = getTransactionHistory();
-    setTransactionHistory(history);
+    setTransactionHistory(Array.isArray(history) ? history : []);
     
     // Load current WhatsApp number
     const currentNumber = getWhatsAppNumber();
@@ -44,8 +48,11 @@ const AdminDashboard = ({ onLogout }) => {
       return;
     }
 
+    // Ensure users is an array
+    const usersArray = Array.isArray(users) ? users : [];
+    
     // Find the user
-    const userIndex = users.findIndex(u => u.id === selectedUser);
+    const userIndex = usersArray.findIndex(u => u.id === selectedUser);
     if (userIndex === -1) {
       setMessage('User not found');
       setMessageType('error');
@@ -53,7 +60,7 @@ const AdminDashboard = ({ onLogout }) => {
     }
 
     // Update user balance
-    const updatedUsers = [...users];
+    const updatedUsers = [...usersArray];
     updatedUsers[userIndex].balance += amountValue;
     
     // Update in localStorage
@@ -73,7 +80,8 @@ const AdminDashboard = ({ onLogout }) => {
     };
     
     // Add to transaction history
-    const updatedHistory = [newTransaction, ...transactionHistory];
+    const historyArray = Array.isArray(transactionHistory) ? transactionHistory : [];
+    const updatedHistory = [newTransaction, ...historyArray];
     setTransactionHistory(updatedHistory);
     
     // Save to localStorage
@@ -112,6 +120,10 @@ const AdminDashboard = ({ onLogout }) => {
   const handleLogout = () => {
     onLogout();
   };
+
+  // Ensure users is an array before mapping
+  const usersArray = Array.isArray(users) ? users : [];
+  const historyArray = Array.isArray(transactionHistory) ? transactionHistory : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
@@ -174,7 +186,7 @@ const AdminDashboard = ({ onLogout }) => {
                     className="w-full p-2 bg-gray-700 border border-gray-600 text-white rounded"
                   >
                     <option value="">Select a user</option>
-                    {users.map((user) => (
+                    {usersArray.map((user) => (
                       <option key={user.id} value={user.id}>
                         {user.username} ({user.email}) - ₹{user.balance.toFixed(2)}
                       </option>
@@ -263,14 +275,14 @@ const AdminDashboard = ({ onLogout }) => {
                 Recent Transactions
               </h2>
               
-              {transactionHistory.length === 0 ? (
+              {historyArray.length === 0 ? (
                 <div className="text-center py-8 text-gray-400">
                   <History className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p>No transactions yet.</p>
                 </div>
               ) : (
                 <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {transactionHistory.map((transaction, index) => (
+                  {historyArray.map((transaction, index) => (
                     <div
                       key={index}
                       className={`flex items-center gap-4 p-4 rounded-lg ${
@@ -336,25 +348,31 @@ const AdminDashboard = ({ onLogout }) => {
               </h3>
               
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {users.map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-gray-700/50"
-                  >
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center">
-                      <span className="text-white font-bold">
-                        {user.username.charAt(0).toUpperCase()}
-                      </span>
+                {usersArray.length > 0 ? (
+                  usersArray.map((user) => (
+                    <div
+                      key={user.id}
+                      className="flex items-center gap-3 p-3 rounded-lg bg-gray-700/50"
+                    >
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center">
+                        <span className="text-white font-bold">
+                          {user.username.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white font-bold truncate">{user.username}</div>
+                        <div className="text-gray-400 text-sm truncate">{user.email}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-yellow-400 font-bold">₹{user.balance.toFixed(2)}</div>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-white font-bold truncate">{user.username}</div>
-                      <div className="text-gray-400 text-sm truncate">{user.email}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-yellow-400 font-bold">₹{user.balance.toFixed(2)}</div>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-gray-400">
+                    No users found.
                   </div>
-                ))}
+                )}
               </div>
             </Card>
           </div>
