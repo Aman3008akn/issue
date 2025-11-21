@@ -18,6 +18,20 @@ export const logout = () => {
   localStorage.removeItem('currentUser');
 };
 
+// Add the missing login function
+export const login = (username, password) => {
+  const user = MOCK_USERS.find(
+    u => (u.username === username || u.email === username) && u.password === password
+  );
+  return user || null;
+};
+
+// Add the missing register function
+export const register = (newUser) => {
+  MOCK_USERS.push(newUser);
+  return newUser;
+};
+
 export const getUserBalance = () => {
   const user = getCurrentUser();
   return user ? user.balance : 0;
