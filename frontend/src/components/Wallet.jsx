@@ -38,12 +38,15 @@ const WalletComponent = ({ onBalanceChange }) => {
         return;
       }
       
-      // For deposit, redirect to WhatsApp
-      const whatsappMessage = `I want to deposit ₹${amountValue.toFixed(2)} into my WinShow account.`;
+      // Generate unique ID for the deposit
+      const uniqueId = 'DEP' + Date.now() + Math.random().toString(36).substr(2, 5).toUpperCase();
+      
+      // For deposit, redirect to WhatsApp with unique ID
+      const whatsappMessage = `I want to deposit ₹${amountValue.toFixed(2)} into my WinShow account. Transaction ID: ${uniqueId}`;
       const whatsappUrl = `https://wa.me/918826817677?text=${encodeURIComponent(whatsappMessage)}`;
       window.open(whatsappUrl, '_blank');
       
-      setMessage(`Please complete your deposit of ₹${amountValue.toFixed(2)} via WhatsApp. If you have already sent the message, please wait for confirmation.`);
+      setMessage(`Please complete your deposit of ₹${amountValue.toFixed(2)} via WhatsApp. Transaction ID: ${uniqueId}. If you have already sent the message, please wait for confirmation.`);
       setMessageType('success');
     } else {
       // Handle withdrawal
