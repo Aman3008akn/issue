@@ -14,8 +14,12 @@ let babelMetadataPlugin;
 let setupDevServer;
 
 if (config.enableVisualEdits) {
-  babelMetadataPlugin = require("./plugins/visual-edits/babel-metadata-plugin");
-  setupDevServer = require("./plugins/visual-edits/dev-server-setup");
+  try {
+    babelMetadataPlugin = require("./plugins/visual-edits/babel-metadata-plugin");
+    setupDevServer = require("./plugins/visual-edits/dev-server-setup");
+  } catch (e) {
+    console.warn("Failed to load visual editing plugins:", e);
+  }
 }
 
 // Conditionally load health check modules only if enabled
@@ -24,9 +28,13 @@ let setupHealthEndpoints;
 let healthPluginInstance;
 
 if (config.enableHealthCheck) {
-  WebpackHealthPlugin = require("./plugins/health-check/webpack-health-plugin");
-  setupHealthEndpoints = require("./plugins/health-check/health-endpoints");
-  healthPluginInstance = new WebpackHealthPlugin();
+  try {
+    WebpackHealthPlugin = require("./plugins/health-check/webpack-health-plugin");
+    setupHealthEndpoints = require("./plugins/health-check/health-endpoints");
+    healthPluginInstance = new WebpackHealthPlugin();
+  } catch (e) {
+    console.warn("Failed to load health check plugins:", e);
+  }
 }
 
 const webpackConfig = {
@@ -74,14 +82,14 @@ const webpackConfig = {
 };
 
 // Only add babel plugin if visual editing is enabled
-if (config.enableVisualEdits) {
+if (config.enableVisualEdits && babelMetadataPlugin) {
   webpackConfig.babel = {
     plugins: [babelMetadataPlugin],
   };
 }
 
 // Setup dev server with visual edits and/or health check
-if (config.enableVisualEdits || config.enableHealthCheck) {
+if ((config.enableVisualEdits && setupDevServer) || (config.enableHealthCheck && setupHealthEndpoints)) {
   webpackConfig.devServer = (devServerConfig) => {
     // Apply visual edits dev server setup if enabled
     if (config.enableVisualEdits && setupDevServer) {
