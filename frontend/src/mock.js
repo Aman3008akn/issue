@@ -204,6 +204,15 @@ export const updateUserBalance = (amount) => {
         saveUsers(users);
         
         return safeBalance;
+      } else {
+        // If user not found in users list, it might be the demo user
+        // Check if it's the demo user and update accordingly
+        if (user.id === '1' && user.username === 'demo') {
+          user.balance = typeof amount === 'number' ? user.balance + amount : amount;
+          user.balance = Math.max(0, user.balance);
+          setCurrentUser(user);
+          return user.balance;
+        }
       }
     } catch (error) {
       console.error('Error updating user balance:', error);
