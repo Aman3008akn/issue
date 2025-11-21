@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { LogOut, Users, Wallet, TrendingUp, History } from 'lucide-react';
+import { LogOut, Users, Wallet, TrendingUp, History, Search } from 'lucide-react';
 import { getTransactionHistory, getUserBalance, updateUserBalance, MOCK_USERS } from '../mock';
 
 const AdminDashboard = ({ onLogout }) => {
   const [users, setUsers] = useState(MOCK_USERS);
   const [selectedUser, setSelectedUser] = useState('');
   const [amount, setAmount] = useState('');
+  const [transactionId, setTransactionId] = useState('');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   const [transactionHistory, setTransactionHistory] = useState([]);
@@ -55,12 +56,28 @@ const AdminDashboard = ({ onLogout }) => {
     // Update state
     setUsers(updatedUsers);
     setAmount('');
-    setMessage(`Successfully added ₹${amountValue.toFixed(2)} to ${updatedUsers[userIndex].username}'s account`);
+    
+    // Add to transaction history with transaction ID
+    const newTransaction = {
+      type: 'deposit',
+      amount: amountValue,
+      timestamp: new Date().toISOString(),
+      balanceAfter: updatedUsers[userIndex].balance,
+      transactionId: transactionId || 'N/A'
+    };
+    
+    // Add to transaction history
+    const updatedHistory = [newTransaction, ...transactionHistory];
+    setTransactionHistory(updatedHistory);
+    
+    // Save to localStorage
+    localStorage.setItem('transactionHistory', JSON.stringify(updatedHistory));
+    
+    setMessage(`Successfully added ₹${amountValue.toFixed(2)} to ${updatedUsers[userIndex].username}'s account. Transaction ID: ${transactionId || 'N/A'}`);
     setMessageType('success');
     
-    // Refresh transaction history
-    const history = getTransactionHistory();
-    setTransactionHistory(history);
+    // Clear transaction ID field
+    setTransactionId('');
   };
 
   const handleLogout = () => {
@@ -149,6 +166,17 @@ const AdminDashboard = ({ onLogout }) => {
                   />
                 </div>
                 
+                <div>
+                  <label className="text-gray-400 text-sm mb-2 block">Transaction ID (optional)</label>
+                  <Input
+                    type="text"
+                    value={transactionId}
+                    onChange={(e) => setTransactionId(e.target.value)}
+                    className="bg-gray-700 border-gray-600 text-white"
+                    placeholder="Enter transaction ID"
+                  />
+                </div>
+                
                 <Button
                   type="submit"
                   className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
@@ -193,6 +221,11 @@ const AdminDashboard = ({ onLogout }) => {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-white font-bold capitalize">{transaction.type}</span>
+                          {transaction.transactionId && (
+                            <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded">
+                              ID: {transaction.transactionId}
+                            </span>
+                          )}
                           <span className="text-xs text-gray-400">
                             {new Date(transaction.timestamp).toLocaleString()}
                           </span>
