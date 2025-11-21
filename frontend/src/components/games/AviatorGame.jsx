@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Plane, TrendingUp, Zap, Crown, Gem, Star } from 'lucide-react';
 import { simulateAviatorRound, getUserBalance, updateUserBalance, addGameHistory } from '../../mock';
+import AviatorLogo from '../AviatorLogo';
 
 const AviatorGame = ({ onBalanceChange }) => {
   const [gameState, setGameState] = useState('waiting'); // waiting, flying, crashed
@@ -143,7 +144,7 @@ const AviatorGame = ({ onBalanceChange }) => {
           <Card className="bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 border-2 border-purple-500/50 overflow-hidden relative">
             {/* Premium decorative elements */}
             <div className="absolute top-4 left-4 flex items-center gap-2">
-              <Crown className="w-6 h-6 text-yellow-400" />
+              <AviatorLogo size={32} />
               <span className="text-yellow-400 font-bold text-lg">PREMIUM</span>
             </div>
             
