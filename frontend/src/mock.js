@@ -1,3 +1,5 @@
+// Mock data and game logic for the gaming platform
+
 // Aviator game logic - Adjusted for 2% win rate
 export const simulateAviatorRound = () => {
   // Random crash point between 1.00x and 100.00x
@@ -91,4 +93,105 @@ export const GAME_PAYOUTS = {
     3: 10,        // Increased payout to balance reduced win rate
     4: 5          // Increased payout to balance reduced win rate
   }
+};
+
+// User management functions
+export const getCurrentUser = () => {
+  const userStr = localStorage.getItem('currentUser');
+  return userStr ? JSON.parse(userStr) : null;
+};
+
+export const setCurrentUser = (user) => {
+  localStorage.setItem('currentUser', JSON.stringify(user));
+};
+
+export const logout = () => {
+  localStorage.removeItem('currentUser');
+};
+
+// Get users from localStorage or use default demo user
+export const getUsers = () => {
+  const usersStr = localStorage.getItem('users');
+  return usersStr ? JSON.parse(usersStr) : [
+    { id: '1', username: 'demo', email: 'demo@example.com', password: 'demo123', balance: 10000 }
+  ];
+};
+
+// Save users to localStorage
+export const saveUsers = (users) => {
+  localStorage.setItem('users', JSON.stringify(users));
+};
+
+// Updated login function to check against users in localStorage
+export const login = (username, password) => {
+  const users = getUsers();
+  const user = users.find(
+    u => (u.username === username || u.email === username) && u.password === password
+  );
+  return user || null;
+};
+
+// Updated register function to save users to localStorage
+export const register = (newUser) => {
+  const users = getUsers();
+  
+  // Check if user with same email already exists
+  const existingUser = users.find(u => u.email === newUser.email);
+  if (existingUser) {
+    return null; // User already exists
+  }
+  
+  users.push(newUser);
+  saveUsers(users);
+  return newUser;
+};
+
+export const getUserBalance = () => {
+  const user = getCurrentUser();
+  return user ? user.balance : 0;
+};
+
+export const updateUserBalance = (amount) => {
+  const user = getCurrentUser();
+  if (user) {
+    // If amount is negative, it's a deduction
+    // If amount is positive, it's an addition
+    user.balance = typeof amount === 'number' ? user.balance + amount : amount;
+    setCurrentUser(user);
+    
+    // Also update in the users list
+    const users = getUsers();
+    const userIndex = users.findIndex(u => u.id === user.id);
+    if (userIndex !== -1) {
+      users[userIndex] = user;
+      saveUsers(users);
+    }
+  }
+};
+
+export const getGameHistory = () => {
+  const historyStr = localStorage.getItem('gameHistory');
+  return historyStr ? JSON.parse(historyStr) : [];
+};
+
+export const addGameHistory = (game) => {
+  const history = getGameHistory();
+  history.unshift(game);
+  // Keep only last 50 games
+  if (history.length > 50) history.pop();
+  localStorage.setItem('gameHistory', JSON.stringify(history));
+};
+
+// Mock transaction history
+export const getTransactionHistory = () => {
+  const historyStr = localStorage.getItem('transactionHistory');
+  return historyStr ? JSON.parse(historyStr) : [];
+};
+
+export const addTransactionHistory = (transaction) => {
+  const history = getTransactionHistory();
+  history.unshift(transaction);
+  // Keep only last 50 transactions
+  if (history.length > 50) history.pop();
+  localStorage.setItem('transactionHistory', JSON.stringify(history));
 };
