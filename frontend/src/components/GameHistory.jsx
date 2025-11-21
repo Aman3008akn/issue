@@ -76,7 +76,7 @@ const GameHistory = () => {
                       <span className={`text-xs px-2 py-0.5 rounded-full ${
                         game.result === 'win' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
                       }`}>
-                        {game.result.toUpperCase()}
+                        {typeof game.result === 'string' ? game.result.toUpperCase() : game.result}
                       </span>
                     </div>
                     <div className="text-sm text-gray-400">
