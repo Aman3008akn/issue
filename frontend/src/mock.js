@@ -52,19 +52,20 @@ export const simulateColorRound = (selectedColor = null) => {
       } else if (selectedColor === 'green') {
         color = 'red'; // If user selected green, give red
       } else {
-        // If user selected violet, give red or green
+        // If user selected violet, give red or green (reduce violet frequency)
         color = Math.random() < 0.5 ? 'red' : 'green';
       }
     }
   } else {
-    // No selection - random color with bias toward violet
+    // No selection - balanced random color distribution
+    // Reduce violet frequency significantly
     const random = Math.random();
-    if (random < 0.1) {
-      color = 'red'; // 10% chance
-    } else if (random < 0.2) {
-      color = 'green'; // 10% chance
+    if (random < 0.35) {
+      color = 'red'; // 35% chance
+    } else if (random < 0.7) {
+      color = 'green'; // 35% chance
     } else {
-      color = 'violet'; // 80% chance
+      color = 'violet'; // 30% chance (reduced from 80%)
     }
   }
   
