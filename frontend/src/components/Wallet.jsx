@@ -38,18 +38,12 @@ const WalletComponent = ({ onBalanceChange }) => {
         return;
       }
       
-      const newBalance = balance + amountValue;
-      updateUserBalance(newBalance);
+      // For deposit, redirect to WhatsApp
+      const whatsappMessage = `I want to deposit ₹${amountValue.toFixed(2)} into my WinShow account.`;
+      const whatsappUrl = `https://wa.me/918826817677?text=${encodeURIComponent(whatsappMessage)}`;
+      window.open(whatsappUrl, '_blank');
       
-      // Add to transaction history
-      addTransactionHistory({
-        type: 'deposit',
-        amount: amountValue,
-        timestamp: new Date().toISOString(),
-        balanceAfter: newBalance
-      });
-      
-      setMessage(`Successfully deposited ₹${amountValue.toFixed(2)}`);
+      setMessage(`Please complete your deposit of ₹${amountValue.toFixed(2)} via WhatsApp. If you have already sent the message, please wait for confirmation.`);
       setMessageType('success');
     } else {
       // Handle withdrawal
