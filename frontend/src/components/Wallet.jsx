@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Wallet, ArrowDownCircle, ArrowUpCircle, IndianRupee, History } from 'lucide-react';
+import { Wallet as WalletIcon, ArrowDownCircle, ArrowUpCircle, IndianRupee, History } from 'lucide-react';
 import { getCurrentUser, updateUserBalance, addTransactionHistory, getTransactionHistory } from '../mock';
 
-const Wallet = ({ onBalanceChange }) => {
+const WalletComponent = ({ onBalanceChange }) => {
   const [amount, setAmount] = useState('');
   const [transactionType, setTransactionType] = useState('deposit'); // 'deposit' or 'withdraw'
   const [message, setMessage] = useState('');
@@ -99,7 +99,7 @@ const Wallet = ({ onBalanceChange }) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Wallet className="w-8 h-8 text-purple-400" />
+        <WalletIcon className="w-8 h-8 text-purple-400" />
         <h2 className="text-3xl font-bold text-white">Wallet</h2>
       </div>
 
@@ -285,4 +285,4 @@ const Wallet = ({ onBalanceChange }) => {
   );
 };
 
-export default Wallet;
+export default WalletComponent;

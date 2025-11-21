@@ -7,7 +7,7 @@ import AviatorGame from './games/AviatorGame';
 import ColorPredictionGame from './games/ColorPredictionGame';
 import CarGame from './games/CarGame';
 import GameHistory from './GameHistory';
-import WalletComponent from './Wallet'; // Import the new Wallet component
+import WalletComponent from './Wallet';
 
 const Dashboard = ({ onLogout }) => {
   const [currentUser, setCurrentUser] = useState(null);
