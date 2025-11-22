@@ -1,11 +1,7 @@
 {
   "extends": [
     "react-app",
-    "react-app/jest",
-    "plugin:react-hooks/recommended"
-  ],
-  "plugins": [
-    "react-hooks"
+    "react-app/jest"
   ],
   "rules": {
     "react-hooks/rules-of-hooks": "error",
