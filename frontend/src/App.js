@@ -1,36 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import { useSupabase } from './contexts/SupabaseContext';
 import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
-import { getCurrentUser } from './mock';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Check if user is already logged in
-    const user = getCurrentUser();
-    if (user) {
-      setIsAuthenticated(true);
-    }
-    setLoading(false);
-  }, []);
-
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-    setIsAdmin(false);
-  };
+  const { user, loading } = useSupabase();
 
   const handleAdminLogin = () => {
-    setIsAuthenticated(true);
     setIsAdmin(true);
   };
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
     setIsAdmin(false);
   };
 
@@ -42,16 +25,19 @@ function App() {
     );
   }
 
+  // Check if user is admin
+  const isAdminUser = user?.email === 'admin@gmail.com';
+
   return (
     <div className="App">
-      {isAuthenticated ? (
-        isAdmin ? (
+      {user ? (
+        isAdminUser || isAdmin ? (
           <AdminDashboard onLogout={handleLogout} />
         ) : (
           <Dashboard onLogout={handleLogout} />
         )
       ) : (
-        <AuthPage onLogin={handleLogin} onAdminLogin={handleAdminLogin} />
+        <AuthPage onLogin={() => {}} onAdminLogin={handleAdminLogin} />
       )}
     </div>
   );

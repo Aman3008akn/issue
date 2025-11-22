@@ -3,7 +3,7 @@ import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Rocket, Mail, Lock, User, Gift } from 'lucide-react';
-import { login, register, setCurrentUser } from '../mock';
+import { useSupabase } from '../contexts/SupabaseContext';
 
 const AuthPage = ({ onLogin, onAdminLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -14,6 +14,7 @@ const AuthPage = ({ onLogin, onAdminLogin }) => {
   });
   const [error, setError] = useState('');
   const [referralId, setReferralId] = useState('');
+  const { signUp, signIn } = useSupabase();
 
   useEffect(() => {
     // Check for referral ID in URL parameters
@@ -31,7 +32,7 @@ const AuthPage = ({ onLogin, onAdminLogin }) => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -43,45 +44,34 @@ const AuthPage = ({ onLogin, onAdminLogin }) => {
         return;
       }
       
-      // Regular user login logic (mock)
-      const user = login(formData.email, formData.password);
-      if (user) {
-        setCurrentUser(user);
-        onLogin(user);
-      } else {
-        setError('Invalid credentials. Try demo/demo123');
+      // Regular user login logic with Supabase
+      try {
+        const { user, profile } = await signIn(formData.email, formData.password);
+        if (user) {
+          onLogin({ ...profile, email: user.email });
+        }
+      } catch (err) {
+        setError('Invalid credentials. Please try again.');
       }
     } else {
-      // Register logic (mock)
+      // Register logic with Supabase
       if (formData.username && formData.email && formData.password) {
-        const newUser = {
-          id: Date.now().toString(),
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-          balance: 5000, // Starting balance
-          referred_by: referralId || null // Add referral ID if present
-        };
-        
-        // If user was referred, add bonus to the referrer
-        if (referralId) {
-          // In a real implementation, this would call the backend API
-          // For now, we'll just show a message
-          console.log(`User was referred by ${referralId}`);
-        }
-        
-        const registeredUser = register(newUser);
-        if (registeredUser) {
-          setCurrentUser(registeredUser);
-          
-          // If user was referred, show a welcome bonus message
-          if (referralId) {
-            alert('Welcome! You were referred by another user. Your referrer will receive a bonus.');
+        try {
+          const { user, profile } = await signUp(formData.email, formData.password, formData.username);
+          if (user) {
+            // If user was referred, show a welcome bonus message
+            if (referralId) {
+              alert('Welcome! You were referred by another user. Your referrer will receive a bonus.');
+            }
+            
+            onLogin({ ...profile, email: user.email });
           }
-          
-          onLogin(registeredUser);
-        } else {
-          setError('User with this email already exists. Please use a different email or login instead.');
+        } catch (err) {
+          if (err.message.includes('already exists')) {
+            setError('User with this email already exists. Please use a different email or login instead.');
+          } else {
+            setError('Registration failed. Please try again.');
+          }
         }
       } else {
         setError('Please fill all fields');

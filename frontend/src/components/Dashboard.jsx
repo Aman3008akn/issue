@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Plane, Palette, Car, Wallet, LogOut, User, Share2 } from 'lucide-react';
-import { getCurrentUser, getUserBalance } from '../mock';
+import { useSupabase } from '../contexts/SupabaseContext';
 import AviatorGame from './games/AviatorGame';
 import ColorPredictionGame from './games/ColorPredictionGame';
 import CarGame from './games/CarGame';
@@ -11,24 +11,17 @@ import WalletComponent from './Wallet';
 import ReferralSystem from './ReferralSystem';
 
 const Dashboard = ({ onLogout }) => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [balance, setBalance] = useState(0);
   const [currentView, setCurrentView] = useState('home');
+  const { profile, signOut, updateUserBalance } = useSupabase();
 
-  useEffect(() => {
-    const user = getCurrentUser();
-    setCurrentUser(user);
-    refreshBalance();
-  }, []);
-
-  const refreshBalance = () => {
-    const userBalance = getUserBalance();
-    setBalance(userBalance);
+  const handleLogout = async () => {
+    await signOut();
+    onLogout();
   };
 
-  const handleLogout = () => {
-    setCurrentUser(null);
-    onLogout();
+  const refreshBalance = () => {
+    // Balance is automatically updated through the Supabase context
+    // This function is kept for compatibility with game components
   };
 
   const games = [
@@ -150,7 +143,7 @@ const Dashboard = ({ onLogout }) => {
                 <Wallet className="w-5 h-5 text-yellow-400" />
                 <div>
                   <div className="text-xs text-gray-400">Balance</div>
-                  <div className="text-white font-bold">₹{(typeof balance === 'number' ? balance : 0).toFixed(2)}</div>
+                  <div className="text-white font-bold">₹{(profile?.balance ? profile.balance : 0).toFixed(2)}</div>
                 </div>
               </Card>
               

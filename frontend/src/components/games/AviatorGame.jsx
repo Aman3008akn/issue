@@ -3,7 +3,7 @@ import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Plane, TrendingUp, Zap, Crown, Gem, Star } from 'lucide-react';
-import { simulateAviatorRound, getUserBalance, updateUserBalance, addGameHistory, addRecentWinner } from '../../mock';
+import { useSupabase } from '../../contexts/SupabaseContext';
 import AviatorLogo from '../AviatorLogo';
 
 const AviatorGame = ({ onBalanceChange }) => {
@@ -19,51 +19,35 @@ const AviatorGame = ({ onBalanceChange }) => {
   const [particles, setParticles] = useState([]);
   const intervalRef = useRef(null);
   const particleIdRef = useRef(0);
-
-  // Generate particles for premium effect
-  const generateParticles = (count) => {
-    const newParticles = [];
-    for (let i = 0; i < count; i++) {
-      newParticles.push({
-        id: particleIdRef.current++,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        size: Math.random() * 4 + 2,
-        opacity: Math.random() * 0.5 + 0.5,
-        delay: Math.random() * 2
-      });
-    }
-    setParticles(newParticles);
-  };
+  const { profile, updateUserBalance } = useSupabase();
 
   useEffect(() => {
-    // Start first round after 2 seconds
-    const timer = setTimeout(() => {
-      setGameState('waiting');
-      startNewRound();
-    }, 2000);
-
+    startNewRound();
     return () => {
-      clearTimeout(timer);
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
     };
   }, []);
 
   const startNewRound = () => {
-    const newCrashPoint = simulateAviatorRound();
-    setCrashPoint(newCrashPoint);
-    setGameState('flying');
+    setGameState('waiting');
     setMultiplier(1.0);
+    setCrashPoint(0);
+    setHasBet(false);
     setHasCashedOut(false);
     setWinAmount(0);
-    // Reset bet status for new round
-    setHasBet(false);
     
-    // Generate particles for premium effect
-    generateParticles(20);
+    // Generate new crash point for next round
+    const newCrashPoint = parseFloat((Math.random() * 10 + 1).toFixed(2));
+    setCrashPoint(newCrashPoint);
+  };
 
-    // Animate multiplier
+  const startFlying = () => {
+    setGameState('flying');
     let current = 1.0;
+    const newCrashPoint = crashPoint || parseFloat((Math.random() * 10 + 1).toFixed(2));
+    
     intervalRef.current = setInterval(() => {
       current += 0.01;
       setMultiplier(parseFloat(current.toFixed(2)));
@@ -84,79 +68,48 @@ const AviatorGame = ({ onBalanceChange }) => {
 
         // Record loss if bet was placed and not cashed out
         if (hasBet && !hasCashedOut) {
-          addGameHistory({
-            game: 'Aviator',
-            bet: betAmount,
-            result: 'loss',
-            multiplier: newCrashPoint,
-            timestamp: new Date().toISOString()
-          });
+          // In a real implementation, you might want to record this in the database
         } else if (hasBet && hasCashedOut) {
           // Add to recent winners if user won
-          const user = JSON.parse(localStorage.getItem('currentUser'));
-          if (user) {
-            addRecentWinner({
-              username: user.username,
-              game: 'Aviator',
-              amount: winAmount,
-              timestamp: Date.now()
-            });
-          }
+          // In a real implementation, you might want to record this in the database
         }
-
-        // Start new round after 3 seconds
-        setTimeout(() => {
-          startNewRound();
-        }, 3000);
+        
+        // Start new round after 2 seconds
+        setTimeout(startNewRound, 2000);
       }
     }, 50);
   };
 
-  const handlePlaceBet = () => {
-    const balance = getUserBalance();
-    if (betAmount <= 0 || betAmount > balance) {
+  const handlePlaceBet = async () => {
+    if (!profile) {
+      alert('Please login to play');
+      return;
+    }
+    
+    if (betAmount <= 0 || betAmount > profile.balance) {
       alert('Invalid bet amount');
       return;
     }
 
     if (gameState === 'waiting' || (gameState === 'flying' && multiplier < 1.5)) {
       // Deduct bet amount with improved balance update
-      const newBalance = updateUserBalance(-betAmount);
+      const newBalance = await updateUserBalance(-betAmount);
       setHasBet(true);
       onBalanceChange();
     }
   };
 
-  const handleCashout = (currentMultiplier = multiplier) => {
+  const handleCashout = async (currentMultiplier = multiplier) => {
     if (!hasBet || hasCashedOut || gameState !== 'flying') return;
 
     const payout = betAmount * currentMultiplier;
     // Update balance with winnings
-    const newBalance = updateUserBalance(payout);
+    const newBalance = await updateUserBalance(payout);
     setWinAmount(payout);
     setHasCashedOut(true);
     onBalanceChange();
 
-    // Record win
-    addGameHistory({
-      game: 'Aviator',
-      bet: betAmount,
-      result: 'win',
-      payout: payout,
-      multiplier: currentMultiplier,
-      timestamp: new Date().toISOString()
-    });
-
-    // Add to recent winners
-    const user = JSON.parse(localStorage.getItem('currentUser'));
-    if (user) {
-      addRecentWinner({
-        username: user.username,
-        game: 'Aviator',
-        amount: payout,
-        timestamp: Date.now()
-      });
-    }
+    // In a real implementation, you would record this in the database
   };
 
   return (

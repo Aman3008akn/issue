@@ -26,7 +26,7 @@ const ReferralSystem = ({ onBalanceChange }) => {
     
     // Simulate bonus for demonstration
     if (referralBonus === 0) {
-      setReferralBonus(50); // Rs. 50 bonus for sharing
+      setReferralBonus(500); // Rs. 500 bonus for sharing (updated from Rs. 50)
     }
   };
 
@@ -84,7 +84,7 @@ const ReferralSystem = ({ onBalanceChange }) => {
             <div>
               <h3 className="text-xl font-bold text-white">Refer & Earn</h3>
               <p className="text-gray-300">
-                Share your referral link and earn Rs. 50 for each friend who registers!
+                Share your referral link and earn Rs. 500 for each friend who registers!
               </p>
             </div>
           </div>
@@ -130,7 +130,7 @@ const ReferralSystem = ({ onBalanceChange }) => {
             <div className="text-2xl font-bold text-indigo-400 mb-2">3</div>
             <h4 className="font-bold text-white mb-2">You Earn</h4>
             <p className="text-gray-400 text-sm">
-              You get Rs. 50 bonus for each successful referral.
+              You get Rs. 500 bonus for each successful referral.
             </p>
           </div>
         </div>
@@ -142,7 +142,7 @@ const ReferralSystem = ({ onBalanceChange }) => {
         <ul className="text-gray-400 space-y-2">
           <li className="flex items-start">
             <span className="text-indigo-400 mr-2">•</span>
-            <span>Each successful referral earns you Rs. 50</span>
+            <span>Each successful referral earns you Rs. 500</span>
           </li>
           <li className="flex items-start">
             <span className="text-indigo-400 mr-2">•</span>

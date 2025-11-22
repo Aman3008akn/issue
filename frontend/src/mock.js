@@ -178,45 +178,44 @@ export const getUserBalance = () => {
   return user ? user.balance : 0;
 };
 
-// Improved updateUserBalance function to prevent balance glitches
-export const updateUserBalance = (amount) => {
+// Improved updateUserBalance function to prevent balance glitches and race conditions
+export const updateUserBalance = async (amount) => {
   const user = getCurrentUser();
   if (user) {
     try {
-      // Get fresh user data to prevent race conditions
-      const users = getUsers();
-      const userIndex = users.findIndex(u => u.id === user.id);
-      
-      if (userIndex !== -1) {
-        // Calculate new balance
-        const currentBalance = users[userIndex].balance || 0;
-        const newBalance = typeof amount === 'number' ? currentBalance + amount : amount;
-        
-        // Ensure balance doesn't go negative
-        const safeBalance = Math.max(0, newBalance);
-        
-        // Update both current user and users list
-        user.balance = safeBalance;
-        users[userIndex].balance = safeBalance;
-        
-        // Save changes
+      // For demo user, handle locally
+      if (user.id === '1' && user.username === 'demo') {
+        user.balance = typeof amount === 'number' ? user.balance + amount : amount;
+        user.balance = Math.max(0, user.balance);
         setCurrentUser(user);
-        saveUsers(users);
-        
-        return safeBalance;
+        return user.balance;
+      }
+      
+      // For real users, always use backend to prevent race conditions
+      const updatedUser = await updateBalanceViaBackend(user.id, amount);
+      if (updatedUser) {
+        return updatedUser.balance;
       } else {
-        // If user not found in users list, it might be the demo user
-        // Check if it's the demo user and update accordingly
-        if (user.id === '1' && user.username === 'demo') {
-          user.balance = typeof amount === 'number' ? user.balance + amount : amount;
-          user.balance = Math.max(0, user.balance);
+        // Fallback to local update if backend fails
+        const users = getUsers();
+        const userIndex = users.findIndex(u => u.id === user.id);
+        
+        if (userIndex !== -1) {
+          const currentBalance = users[userIndex].balance || 0;
+          const newBalance = typeof amount === 'number' ? currentBalance + amount : amount;
+          const safeBalance = Math.max(0, newBalance);
+          
+          user.balance = safeBalance;
+          users[userIndex].balance = safeBalance;
+          
           setCurrentUser(user);
-          return user.balance;
+          saveUsers(users);
+          
+          return safeBalance;
         }
       }
     } catch (error) {
       console.error('Error updating user balance:', error);
-      // Return current balance if update fails
       return user.balance || 0;
     }
   }
@@ -320,4 +319,92 @@ export const claimReferralBonus = (userId, referredUserId) => {
 
 export const getReferralLink = (userId) => {
   return `${window.location.origin}/register?ref=${userId}`;
+};
+
+// API functions for backend integration
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+
+// Fetch user data from backend
+export const fetchUserData = async (userId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/${userId}`);
+    if (response.ok) {
+      const userData = await response.json();
+      return userData;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    return null;
+  }
+};
+
+// Update user balance via backend with proper error handling
+export const updateBalanceViaBackend = async (userId, amount) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/balance`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ amount }),
+    });
+    
+    if (response.ok) {
+      const updatedUser = await response.json();
+      // Update local storage as well for immediate UI update
+      const currentUser = getCurrentUser();
+      if (currentUser && currentUser.id === userId) {
+        currentUser.balance = updatedUser.balance;
+        setCurrentUser(currentUser);
+      }
+      return updatedUser;
+    } else if (response.status === 409) {
+      // Handle race condition - fetch fresh data
+      const freshUser = await fetchUserData(userId);
+      if (freshUser) {
+        const currentUser = getCurrentUser();
+        if (currentUser && currentUser.id === userId) {
+          currentUser.balance = freshUser.balance;
+          setCurrentUser(currentUser);
+        }
+        return freshUser;
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error('Error updating balance:', error);
+    return null;
+  }
+};
+
+// Fetch game results from backend (for real-time multiplayer games)
+export const fetchGameResults = async (gameType) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/games/${gameType}/results`);
+    if (response.ok) {
+      const results = await response.json();
+      return results;
+    }
+    // Fallback to simulation if backend is not available
+    return simulateGameResults(gameType);
+  } catch (error) {
+    console.error('Error fetching game results:', error);
+    // Fallback to simulation if backend is not available
+    return simulateGameResults(gameType);
+  }
+};
+
+// Simulate game results (fallback when backend is not available)
+const simulateGameResults = (gameType) => {
+  switch (gameType) {
+    case 'aviator':
+      return { crashPoint: simulateAviatorRound() };
+    case 'color':
+      return simulateColorRound();
+    case 'car':
+      return { results: simulateCarRace() };
+    default:
+      return null;
+  }
 };
