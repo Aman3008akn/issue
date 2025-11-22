@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
-import { Wallet as WalletIcon, ArrowDownCircle, ArrowUpCircle, IndianRupee, History, CreditCard, Smartphone, Globe } from 'lucide-react';
+import { Wallet as WalletIcon, ArrowDownCircle, ArrowUpCircle, IndianRupee, History, CreditCard, Smartphone, Globe, Phone } from 'lucide-react';
 import { useSupabase } from '../contexts/SupabaseContext';
 
 const WalletComponent = ({ onBalanceChange }) => {
@@ -23,7 +23,7 @@ const WalletComponent = ({ onBalanceChange }) => {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState(''); // 'success' or 'error'
   const [showHistory, setShowHistory] = useState(false);
-  const { profile, updateUserBalance } = useSupabase();
+  const { profile, updateUserBalance, supabase } = useSupabase();
 
   const handleTransaction = async (e) => {
     e.preventDefault();
@@ -38,12 +38,17 @@ const WalletComponent = ({ onBalanceChange }) => {
     }
 
     if (transactionType === 'deposit') {
-      // In a real app, this would redirect to a payment gateway
-      // For now, we'll just add the balance directly
-      const newBalance = await updateUserBalance(amountValue);
-      
-      setMessage(`Successfully deposited ₹${amountValue.toFixed(2)}`);
-      setMessageType('success');
+      // For deposit, we'll add the balance directly
+      try {
+        const newBalance = await updateUserBalance(amountValue);
+        
+        setMessage(`Successfully deposited ₹${amountValue.toFixed(2)}`);
+        setMessageType('success');
+      } catch (error) {
+        console.error('Error depositing funds:', error);
+        setMessage('Error depositing funds. Please try again.');
+        setMessageType('error');
+      }
     } else {
       // Withdrawal
       if (amountValue > profile.balance) {
@@ -120,6 +125,13 @@ const WalletComponent = ({ onBalanceChange }) => {
     }
   };
 
+  // Mock transaction history - in a real app, this would come from the database
+  const transactionHistory = [
+    { type: 'deposit', amount: 1000, timestamp: '2025-11-20T10:30:00Z', balanceAfter: 6000 },
+    { type: 'withdraw', amount: 500, timestamp: '2025-11-19T14:15:00Z', balanceAfter: 5000 },
+    { type: 'deposit', amount: 2000, timestamp: '2025-11-18T09:45:00Z', balanceAfter: 5500 },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -184,11 +196,33 @@ const WalletComponent = ({ onBalanceChange }) => {
           </div>
 
           {transactionType === 'deposit' ? (
-            <div className="bg-gradient-to-br from-green-900/30 to-emerald-900/30 border border-green-500/30 rounded-lg p-4">
-              <h4 className="text-green-400 font-bold mb-2">Deposit Information</h4>
-              <p className="text-gray-300 text-sm">
-                After deposit, please contact support with your transaction ID for instant credit.
-              </p>
+            <div className="space-y-4">
+              <div className="bg-gradient-to-br from-green-900/30 to-emerald-900/30 border border-green-500/30 rounded-lg p-4">
+                <h4 className="text-green-400 font-bold mb-2">Deposit Information</h4>
+                <p className="text-gray-300 text-sm">
+                  After deposit, please contact support with your transaction ID for instant credit.
+                </p>
+              </div>
+              
+              <div className="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 border border-blue-500/30 rounded-lg p-4">
+                <h4 className="text-blue-400 font-bold mb-2 flex items-center gap-2">
+                  <Phone className="w-4 h-4" />
+                  WhatsApp Support
+                </h4>
+                <p className="text-gray-300 text-sm mb-2">
+                  Contact our support team for deposit assistance:
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-white font-mono">+91 98765 43210</span>
+                  <Button 
+                    size="sm" 
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={() => window.open('https://wa.me/919876543210', '_blank')}
+                  >
+                    Open WhatsApp
+                  </Button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">

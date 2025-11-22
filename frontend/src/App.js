@@ -30,7 +30,7 @@ function App() {
 
   return (
     <div className="App">
-      {user ? (
+      {user || isAdmin ? (
         isAdminUser || isAdmin ? (
           <AdminDashboard onLogout={handleLogout} />
         ) : (
