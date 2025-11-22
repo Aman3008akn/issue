@@ -61,15 +61,52 @@ export const SupabaseProvider = ({ children }) => {
         .eq('id', userId)
         .single();
 
-      if (error) throw error;
-      setProfile(data);
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        // If user profile doesn't exist, create one
+        if (error.code === 'PGRST116') {
+          // Profile not found, create one
+          await createUserProfile(userId);
+        }
+      } else {
+        setProfile(data);
+      }
     } catch (error) {
       console.error('Error fetching user profile:', error);
     }
   };
 
+  const createUserProfile = async (userId) => {
+    try {
+      // Get user from auth
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      
+      if (user) {
+        const { data, error } = await supabase
+          .from('users')
+          .insert([
+            {
+              id: user.id,
+              username: user.email.split('@')[0], // Default username from email
+              email: user.email,
+              balance: 5000.0,
+            }
+          ])
+          .select()
+          .single();
+
+        if (error) throw error;
+        setProfile(data);
+      }
+    } catch (error) {
+      console.error('Error creating user profile:', error);
+    }
+  };
+
   const signUp = async (email, password, username) => {
     try {
+      // First, sign up the user
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -77,6 +114,7 @@ export const SupabaseProvider = ({ children }) => {
 
       if (error) throw error;
 
+      // If signup is successful, create user profile in the users table
       if (data.user) {
         const { data: profile, error: profileError } = await supabase
           .from('users')
@@ -85,16 +123,28 @@ export const SupabaseProvider = ({ children }) => {
               id: data.user.id,
               username,
               email,
-              balance: 5000.0,
+              balance: 5000.0, // Starting balance
             }
           ])
           .select()
           .single();
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          // If profile already exists, fetch it
+          if (profileError.code === '23505') { // Unique violation
+            const { data: existingProfile, error: fetchError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', data.user.id)
+              .single();
+            
+            if (fetchError) throw fetchError;
+            return { user: data.user, profile: existingProfile };
+          }
+          throw profileError;
+        }
 
-        setUser(data.user);
-        setProfile(profile);
+        return { user: data.user, profile };
       }
 
       return data;
@@ -114,8 +164,36 @@ export const SupabaseProvider = ({ children }) => {
       if (error) throw error;
 
       if (data.user) {
-        setUser(data.user);
-        await fetchUserProfile(data.user.id);
+        // Get user profile
+        const { data: profile, error: profileError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+
+        // If profile doesn't exist, create one
+        if (profileError) {
+          if (profileError.code === 'PGRST116') { // Not found
+            const { data: newProfile, error: createError } = await supabase
+              .from('users')
+              .insert([
+                {
+                  id: data.user.id,
+                  username: data.user.email.split('@')[0],
+                  email: data.user.email,
+                  balance: 5000.0,
+                }
+              ])
+              .select()
+              .single();
+            
+            if (createError) throw createError;
+            return { user: data.user, profile: newProfile };
+          }
+          throw profileError;
+        }
+
+        return { user: data.user, profile };
       }
 
       return data;

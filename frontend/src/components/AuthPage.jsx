@@ -46,28 +46,34 @@ const AuthPage = ({ onLogin, onAdminLogin }) => {
       
       // Regular user login logic with Supabase
       try {
-        const { user, profile } = await signIn(formData.email, formData.password);
-        if (user) {
-          onLogin({ ...profile, email: user.email });
+        const result = await signIn(formData.email, formData.password);
+        if (result && result.user) {
+          onLogin({ ...result.profile, email: result.user.email });
+        } else {
+          setError('Invalid credentials. Please try again.');
         }
       } catch (err) {
+        console.error('Login error:', err);
         setError('Invalid credentials. Please try again.');
       }
     } else {
       // Register logic with Supabase
       if (formData.username && formData.email && formData.password) {
         try {
-          const { user, profile } = await signUp(formData.email, formData.password, formData.username);
-          if (user) {
+          const result = await signUp(formData.email, formData.password, formData.username);
+          if (result && result.user) {
             // If user was referred, show a welcome bonus message
             if (referralId) {
               alert('Welcome! You were referred by another user. Your referrer will receive a bonus.');
             }
             
-            onLogin({ ...profile, email: user.email });
+            onLogin({ ...result.profile, email: result.user.email });
+          } else {
+            setError('Registration failed. Please try again.');
           }
         } catch (err) {
-          if (err.message.includes('already exists')) {
+          console.error('Registration error:', err);
+          if (err.message && err.message.includes('already exists')) {
             setError('User with this email already exists. Please use a different email or login instead.');
           } else {
             setError('Registration failed. Please try again.');
@@ -178,7 +184,7 @@ const AuthPage = ({ onLogin, onAdminLogin }) => {
         </form>
 
         <div className="mt-6 text-center text-gray-400 text-sm">
-          <p>Demo credentials: demo/demo123</p>
+          <p>Use admin@gmail.com with Admin123 for admin access</p>
         </div>
       </Card>
     </div>
