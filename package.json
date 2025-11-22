@@ -8,5 +8,8 @@
   "scripts": {
     "build": "cd frontend && npm run build",
     "start": "cd frontend && npm start"
+  },
+  "devDependencies": {
+    "eslint-plugin-react-hooks": "^7.0.1"
   }
 }
