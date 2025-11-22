@@ -1,3 +1,4 @@
+// src/components/games/AviatorGame.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
@@ -19,15 +20,25 @@ const AviatorGame = ({ onBalanceChange }) => {
   const [particles, setParticles] = useState([]);
   const intervalRef = useRef(null);
   const particleIdRef = useRef(0);
-  const { profile, updateUserBalance } = useSupabase();
+
+  const { user, profile, updateUserBalance, loading } = useSupabase();
+
+  console.log('AviatorGame -> user:', user, 'profile:', profile, 'loading:', loading);
 
   useEffect(() => {
     startNewRound();
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+
+    const demoTimeout = setTimeout(() => {
+      if (gameState === 'waiting' && !hasBet) {
+        startFlying();
       }
+    }, 2000);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      clearTimeout(demoTimeout);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startNewRound = () => {
@@ -37,67 +48,74 @@ const AviatorGame = ({ onBalanceChange }) => {
     setHasBet(false);
     setHasCashedOut(false);
     setWinAmount(0);
-    
-    // Generate new crash point for next round
-    const newCrashPoint = parseFloat((Math.random() * 10 + 1).toFixed(2));
+
+    // 12% chance high multiplier, 88% low
+    let newCrashPoint;
+    const rand = Math.random();
+    if (rand < 0.88) {
+      newCrashPoint = parseFloat((Math.random() * 1 + 1).toFixed(2));   // 1–2x
+    } else {
+      newCrashPoint = parseFloat((Math.random() * 9 + 2).toFixed(2));   // 2–11x
+    }
     setCrashPoint(newCrashPoint);
   };
 
   const startFlying = () => {
     setGameState('flying');
     let current = 1.0;
-    const newCrashPoint = crashPoint || parseFloat((Math.random() * 10 + 1).toFixed(2));
-    
+    const newCrashPoint =
+      crashPoint || parseFloat((Math.random() * 10 + 1).toFixed(2));
+
     intervalRef.current = setInterval(() => {
       current += 0.01;
       setMultiplier(parseFloat(current.toFixed(2)));
 
-      // Check auto cashout
-      if (autoCashout && current >= parseFloat(autoCashout) && hasBet && !hasCashedOut) {
+      // Auto cashout
+      if (
+        autoCashout &&
+        current >= parseFloat(autoCashout) &&
+        hasBet &&
+        !hasCashedOut
+      ) {
         handleCashout(current);
       }
 
-      // Check crash
+      // Crash
       if (current >= newCrashPoint) {
         clearInterval(intervalRef.current);
         setGameState('crashed');
         setMultiplier(newCrashPoint);
-        
-        // Add to history
-        setHistory(prev => [newCrashPoint, ...prev.slice(0, 9)]);
 
-        // Record loss if bet was placed and not cashed out
-        if (hasBet && !hasCashedOut) {
-          // In a real implementation, you might want to record this in the database
-        } else if (hasBet && hasCashedOut) {
-          // Add to recent winners if user won
-          // In a real implementation, you might want to record this in the database
-        }
-        
-        // Start new round after 2 seconds
+        setHistory((prev) => [newCrashPoint, ...prev.slice(0, 9)]);
         setTimeout(startNewRound, 2000);
       }
     }, 50);
   };
 
   const handlePlaceBet = async () => {
-    // Check if user is authenticated
-    if (!profile) {
+    // 1) Login check
+    if (!user) {
       alert('Please login to play');
       return;
     }
-    
+
+    // 2) Profile loaded?
+    if (!profile) {
+      alert('Loading your profile, please wait a moment and try again.');
+      return;
+    }
+
     if (betAmount <= 0 || betAmount > profile.balance) {
       alert('Invalid bet amount');
       return;
     }
 
     if (gameState === 'waiting' || (gameState === 'flying' && multiplier < 1.5)) {
-      // Deduct bet amount with improved balance update
       try {
-        const newBalance = await updateUserBalance(-betAmount);
+        await updateUserBalance(-betAmount); // context se userId ja raha hai
         setHasBet(true);
-        onBalanceChange();
+        onBalanceChange && onBalanceChange();
+        startFlying();
       } catch (error) {
         console.error('Error placing bet:', error);
         alert('Error placing bet. Please try again.');
@@ -109,22 +127,19 @@ const AviatorGame = ({ onBalanceChange }) => {
     if (!hasBet || hasCashedOut || gameState !== 'flying') return;
 
     const payout = betAmount * currentMultiplier;
-    // Update balance with winnings
+
     try {
-      const newBalance = await updateUserBalance(payout);
+      await updateUserBalance(payout);
       setWinAmount(payout);
       setHasCashedOut(true);
-      onBalanceChange();
+      onBalanceChange && onBalanceChange();
     } catch (error) {
       console.error('Error cashing out:', error);
       alert('Error cashing out. Please try again.');
     }
-
-    // In a real implementation, you would record this in the database
   };
 
-  // Show loading state if profile is not loaded yet
-  if (profile === null) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-white text-xl">Loading game...</div>
@@ -132,26 +147,25 @@ const AviatorGame = ({ onBalanceChange }) => {
     );
   }
 
+  // ---------------- UI (same as pehle) ----------------
   return (
     <div className="space-y-6">
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Main Game Area */}
         <div className="lg:col-span-2">
           <Card className="bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 border-2 border-purple-500/50 overflow-hidden relative">
-            {/* Premium decorative elements */}
             <div className="absolute top-4 left-4 flex items-center gap-2">
               <AviatorLogo size={32} />
               <span className="text-yellow-400 font-bold text-lg">PREMIUM</span>
             </div>
-            
+
             <div className="absolute top-4 right-4 flex items-center gap-2">
               <Gem className="w-6 h-6 text-pink-400" />
               <span className="text-pink-400 font-bold text-lg">VIP</span>
             </div>
-            
-            {/* Animated background particles */}
+
             <div className="absolute inset-0 overflow-hidden">
-              {particles.map(particle => (
+              {particles.map((particle) => (
                 <div
                   key={particle.id}
                   className="absolute rounded-full bg-gradient-to-r from-purple-400 to-pink-400 animate-pulse"
@@ -161,17 +175,15 @@ const AviatorGame = ({ onBalanceChange }) => {
                     width: `${particle.size}px`,
                     height: `${particle.size}px`,
                     opacity: particle.opacity,
-                    animationDelay: `${particle.delay}s`
+                    animationDelay: `${particle.delay}s`,
                   }}
                 />
               ))}
             </div>
-            
+
             <div className="relative h-96 flex items-center justify-center">
-              {/* Background Animation */}
               <div className="absolute inset-0 bg-gradient-to-br from-purple-900/30 to-pink-900/30" />
-              
-              {/* Multiplier Display */}
+
               <div className="relative z-10 text-center">
                 {gameState === 'crashed' ? (
                   <div className="space-y-4">
@@ -196,15 +208,24 @@ const AviatorGame = ({ onBalanceChange }) => {
                   </div>
                 ) : gameState === 'flying' ? (
                   <div className="space-y-4">
-                    <Plane className={`w-24 h-24 mx-auto transition-all duration-100 ${
-                      multiplier > 5 ? 'text-yellow-400 animate-bounce' : 
-                      multiplier > 2 ? 'text-purple-400' : 'text-blue-400'
-                    }`} />
-                    <div className={`text-8xl font-bold bg-gradient-to-r ${
-                      multiplier > 10 ? 'from-yellow-400 via-red-500 to-pink-500' :
-                      multiplier > 5 ? 'from-purple-400 to-pink-400' :
-                      'from-blue-400 to-purple-400'
-                    } bg-clip-text text-transparent transition-all duration-300`}>
+                    <Plane
+                      className={`w-24 h-24 mx-auto transition-all duration-100 ${
+                        multiplier > 5
+                          ? 'text-yellow-400 animate-bounce'
+                          : multiplier > 2
+                          ? 'text-purple-400'
+                          : 'text-blue-400'
+                      }`}
+                    />
+                    <div
+                      className={`text-8xl font-bold bg-gradient-to-r ${
+                        multiplier > 10
+                          ? 'from-yellow-400 via-red-500 to-pink-500'
+                          : multiplier > 5
+                          ? 'from-purple-400 to-pink-400'
+                          : 'from-blue-400 to-purple-400'
+                      } bg-clip-text text-transparent transition-all duration-300`}
+                    >
                       {multiplier.toFixed(2)}x
                     </div>
                     {hasCashedOut && (
@@ -226,7 +247,6 @@ const AviatorGame = ({ onBalanceChange }) => {
             </div>
           </Card>
 
-          {/* History */}
           <Card className="mt-4 bg-gradient-to-r from-gray-800/80 to-gray-900/80 border-2 border-purple-500/30 p-4 backdrop-blur-sm">
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="w-5 h-5 text-purple-400" />
@@ -237,9 +257,11 @@ const AviatorGame = ({ onBalanceChange }) => {
                 <div
                   key={index}
                   className={`px-3 py-1 rounded-full text-sm font-bold border ${
-                    crash >= 5 ? 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-400/50' :
-                    crash >= 2 ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-400/50' : 
-                    'bg-gradient-to-r from-red-500/20 to-pink-500/20 text-red-400 border-red-400/50'
+                    crash >= 5
+                      ? 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-400/50'
+                      : crash >= 2
+                      ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-400/50'
+                      : 'bg-gradient-to-r from-red-500/20 to-pink-500/20 text-red-400 border-red-400/50'
                   }`}
                 >
                   {crash.toFixed(2)}x
@@ -256,7 +278,7 @@ const AviatorGame = ({ onBalanceChange }) => {
               <Zap className="w-6 h-6 text-yellow-400" />
               <h3 className="text-white font-bold text-xl">Place Your Bet</h3>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="text-gray-300 text-sm mb-2 block flex items-center gap-2">
@@ -266,7 +288,9 @@ const AviatorGame = ({ onBalanceChange }) => {
                 <Input
                   type="number"
                   value={betAmount}
-                  onChange={(e) => setBetAmount(parseFloat(e.target.value) || 0)}
+                  onChange={(e) =>
+                    setBetAmount(parseFloat(e.target.value) || 0)
+                  }
                   className="bg-gray-700/50 border-2 border-purple-500/30 text-white placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 transition-all"
                   disabled={hasBet}
                 />
@@ -304,7 +328,10 @@ const AviatorGame = ({ onBalanceChange }) => {
                 <Button
                   onClick={handlePlaceBet}
                   className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-3 border border-green-500/50 shadow-lg hover:shadow-green-500/20 transition-all hover:scale-105"
-                  disabled={gameState === 'crashed' || (gameState === 'flying' && multiplier >= 1.5)}
+                  disabled={
+                    gameState === 'crashed' ||
+                    (gameState === 'flying' && multiplier >= 1.5)
+                  }
                 >
                   <Zap className="w-5 h-5 mr-2" />
                   Place Bet

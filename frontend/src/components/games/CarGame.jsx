@@ -12,7 +12,7 @@ const CarGame = ({ onBalanceChange }) => {
   const [carPositions, setCarPositions] = useState([0, 0, 0, 0]);
   const [winner, setWinner] = useState(null);
   const [history, setHistory] = useState([]);
-  const { profile, updateUserBalance } = useSupabase();
+  const { profile, updateUserBalance, loading } = useSupabase();
 
   useEffect(() => {
     if (raceState === 'racing') {
@@ -23,21 +23,31 @@ const CarGame = ({ onBalanceChange }) => {
             const speed = Math.random() * 3 + 1;
             return Math.min(pos + speed, 100);
           });
-          
+
           // Check if any car has finished
           const finishedCarIndex = newPositions.findIndex(pos => pos >= 100);
           if (finishedCarIndex !== -1) {
             clearInterval(interval);
             finishRace(finishedCarIndex);
           }
-          
+
           return newPositions;
         });
       }, 100);
-      
+
       return () => clearInterval(interval);
     }
   }, [raceState]);
+
+  // Start demo race after 4 seconds
+  useEffect(() => {
+    const demoTimeout = setTimeout(() => {
+      if (raceState === 'waiting') {
+        setRaceState('racing');
+      }
+    }, 4000);
+    return () => clearTimeout(demoTimeout);
+  }, []);
 
   const startRace = async () => {
     // Check if user is authenticated
@@ -45,12 +55,12 @@ const CarGame = ({ onBalanceChange }) => {
       alert('Please login to play');
       return;
     }
-    
+
     if (!selectedCar) {
       alert('Please select a car');
       return;
     }
-    
+
     if (betAmount <= 0 || betAmount > profile.balance) {
       alert('Invalid bet amount');
       return;
@@ -72,20 +82,20 @@ const CarGame = ({ onBalanceChange }) => {
   const finishRace = async (winningCarIndex) => {
     setRaceState('finished');
     setWinner(winningCarIndex);
-    
+
     const result = {
       car: winningCarIndex,
       timestamp: new Date().toISOString()
     };
-    
+
     setHistory(prev => [result, ...prev.slice(0, 9)]);
-    
+
     // Check if user won
     if (selectedCar === `car${winningCarIndex}`) {
       // Higher payout for riskier positions
       const multiplier = winningCarIndex === 0 ? 2 : winningCarIndex === 1 ? 3 : winningCarIndex === 2 ? 5 : 10;
       const winAmount = betAmount * multiplier;
-      
+
       try {
         // Add winnings to user balance
         const newBalance = await updateUserBalance(winAmount);
@@ -115,7 +125,7 @@ const CarGame = ({ onBalanceChange }) => {
   };
 
   // Show loading state if profile is not loaded yet
-  if (profile === null) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-white text-xl">Loading game...</div>
@@ -150,7 +160,7 @@ const CarGame = ({ onBalanceChange }) => {
                       <div key={i} className={`h-4 w-full ${i % 2 === 0 ? 'bg-white' : 'bg-gray-300'}`} />
                     ))}
                   </div>
-                  
+
                   {/* Cars */}
                   {carPositions.map((position, index) => (
                     <div
@@ -161,7 +171,7 @@ const CarGame = ({ onBalanceChange }) => {
                       <Car className="w-8 h-8 text-white" />
                     </div>
                   ))}
-                  
+
                   {/* Winner Banner */}
                   {raceState === 'finished' && winner !== null && (
                     <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
@@ -233,7 +243,7 @@ const CarGame = ({ onBalanceChange }) => {
               <Crown className="w-6 h-6 text-yellow-400" />
               <h3 className="text-white font-bold text-xl">Place Your Bet</h3>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="text-gray-300 text-sm mb-2 block flex items-center gap-2">
@@ -270,7 +280,7 @@ const CarGame = ({ onBalanceChange }) => {
                   <Play className="w-5 h-5 mr-2" />
                   Start Race
                 </Button>
-                
+
                 <Button
                   onClick={resetRace}
                   className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white font-bold py-3 border border-gray-500/50 transition-all hover:scale-105"

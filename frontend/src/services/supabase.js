@@ -124,13 +124,13 @@ export const getUserBalance = async (userId) => {
 export const updateUserBalance = async (userId, amount) => {
   try {
     // Use Supabase's atomic increment to prevent race conditions
-    const { data, error } = await supabase.rpc('update_user_balance', {
+    const balanceResult = await supabase.rpc('update_user_balance', {
       user_id: userId,
       amount: amount
     });
 
-    if (error) throw error;
-    return data;
+    if (balanceResult.error) throw balanceResult.error;
+    return balanceResult.data;
   } catch (error) {
     console.error('Error updating user balance:', error);
     throw error;

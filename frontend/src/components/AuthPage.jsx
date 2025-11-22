@@ -5,7 +5,7 @@ import { Input } from './ui/input';
 import { Rocket, Mail, Lock, User, Gift, Eye, EyeOff } from 'lucide-react';
 import { useSupabase } from '../contexts/SupabaseContext';
 
-const AuthPage = ({ onLogin, onAdminLogin }) => {
+const AuthPage = ({ onAdminLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     username: '',
@@ -99,10 +99,6 @@ const AuthPage = ({ onLogin, onAdminLogin }) => {
         const result = await signIn(formData.email, formData.password);
         if (result && result.user) {
           setSuccess('Login successful! Redirecting...');
-          setTimeout(() => {
-            // Call onLogin with the user and profile data
-            if (onLogin) onLogin(result.user, result.profile);
-          }, 1000);
         } else {
           setError('Invalid credentials. Please try again.');
         }
@@ -117,11 +113,6 @@ const AuthPage = ({ onLogin, onAdminLogin }) => {
               alert('Welcome! You were referred by another user. Your referrer will receive a bonus.');
             }, 1500);
           }
-          
-          setTimeout(() => {
-            // Call onLogin with the user and profile data
-            if (onLogin) onLogin(result.user, result.profile);
-          }, 2000);
         } else {
           setError('Registration failed. Please try again.');
         }

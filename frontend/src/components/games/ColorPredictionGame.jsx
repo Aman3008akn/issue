@@ -13,7 +13,7 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [countdown, setCountdown] = useState(10);
   const [history, setHistory] = useState([]);
-  const { profile, updateUserBalance } = useSupabase();
+  const { profile, updateUserBalance, loading } = useSupabase();
 
   useEffect(() => {
     let interval;
@@ -31,6 +31,17 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
     }
     return () => clearInterval(interval);
   }, [isPlaying, countdown]);
+
+  // Start demo round after 3 seconds
+  useEffect(() => {
+    const demoTimeout = setTimeout(() => {
+      if (!isPlaying && !gameResult) {
+        setIsPlaying(true);
+        setCountdown(10);
+      }
+    }, 3000);
+    return () => clearTimeout(demoTimeout);
+  }, []);
 
   const placeBet = async () => {
     // Check if user is authenticated
@@ -154,7 +165,7 @@ const ColorPredictionGame = ({ onBalanceChange }) => {
   };
 
   // Show loading state if profile is not loaded yet
-  if (profile === null) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-white text-xl">Loading game...</div>

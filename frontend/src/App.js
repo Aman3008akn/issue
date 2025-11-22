@@ -34,10 +34,10 @@ function App() {
         isAdminUser || isAdmin ? (
           <AdminDashboard onLogout={handleLogout} />
         ) : (
-          <Dashboard user={user} profile={profile} onLogout={handleLogout} />
+          <Dashboard onLogout={handleLogout} />
         )
       ) : (
-        <AuthPage onLogin={() => {}} onAdminLogin={handleAdminLogin} />
+        <AuthPage onAdminLogin={handleAdminLogin} />
       )}
     </div>
   );

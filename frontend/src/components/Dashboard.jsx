@@ -10,9 +10,9 @@ import GameHistory from './GameHistory';
 import WalletComponent from './Wallet';
 import ReferralSystem from './ReferralSystem';
 
-const Dashboard = ({ user, profile, onLogout }) => {
+const Dashboard = ({ onLogout }) => {
   const [currentView, setCurrentView] = useState('home');
-  const { signOut, updateUserBalance } = useSupabase();
+  const { user, profile, signOut, updateUserBalance } = useSupabase();
 
   const handleLogout = async () => {
     await signOut();
