@@ -17,7 +17,7 @@ const AdminDashboard = ({ onLogout }) => {
   const [whatsappMessage, setWhatsappMessage] = useState('');
   const [withdrawalRequests, setWithdrawalRequests] = useState([]);
   const [activeTab, setActiveTab] = useState('users'); // 'users', 'transactions', 'withdrawals'
-  const { signOut } = useSupabase();
+  const { signOut, supabase } = useSupabase();
 
   useEffect(() => {
     // Load data

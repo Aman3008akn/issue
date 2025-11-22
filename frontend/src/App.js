@@ -7,7 +7,7 @@ import AdminDashboard from './components/AdminDashboard';
 
 function App() {
   const [isAdmin, setIsAdmin] = useState(false);
-  const { user, loading } = useSupabase();
+  const { user, profile, loading } = useSupabase();
 
   const handleAdminLogin = () => {
     setIsAdmin(true);
@@ -34,7 +34,7 @@ function App() {
         isAdminUser || isAdmin ? (
           <AdminDashboard onLogout={handleLogout} />
         ) : (
-          <Dashboard onLogout={handleLogout} />
+          <Dashboard user={user} profile={profile} onLogout={handleLogout} />
         )
       ) : (
         <AuthPage onLogin={() => {}} onAdminLogin={handleAdminLogin} />

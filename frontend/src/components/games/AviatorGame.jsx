@@ -81,6 +81,7 @@ const AviatorGame = ({ onBalanceChange }) => {
   };
 
   const handlePlaceBet = async () => {
+    // Check if user is authenticated
     if (!profile) {
       alert('Please login to play');
       return;
@@ -93,9 +94,14 @@ const AviatorGame = ({ onBalanceChange }) => {
 
     if (gameState === 'waiting' || (gameState === 'flying' && multiplier < 1.5)) {
       // Deduct bet amount with improved balance update
-      const newBalance = await updateUserBalance(-betAmount);
-      setHasBet(true);
-      onBalanceChange();
+      try {
+        const newBalance = await updateUserBalance(-betAmount);
+        setHasBet(true);
+        onBalanceChange();
+      } catch (error) {
+        console.error('Error placing bet:', error);
+        alert('Error placing bet. Please try again.');
+      }
     }
   };
 
@@ -104,13 +110,27 @@ const AviatorGame = ({ onBalanceChange }) => {
 
     const payout = betAmount * currentMultiplier;
     // Update balance with winnings
-    const newBalance = await updateUserBalance(payout);
-    setWinAmount(payout);
-    setHasCashedOut(true);
-    onBalanceChange();
+    try {
+      const newBalance = await updateUserBalance(payout);
+      setWinAmount(payout);
+      setHasCashedOut(true);
+      onBalanceChange();
+    } catch (error) {
+      console.error('Error cashing out:', error);
+      alert('Error cashing out. Please try again.');
+    }
 
     // In a real implementation, you would record this in the database
   };
+
+  // Show loading state if profile is not loaded yet
+  if (profile === null) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-white text-xl">Loading game...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

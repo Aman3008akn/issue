@@ -100,7 +100,8 @@ const AuthPage = ({ onLogin, onAdminLogin }) => {
         if (result && result.user) {
           setSuccess('Login successful! Redirecting...');
           setTimeout(() => {
-            onLogin({ ...result.profile, email: result.user.email });
+            // Call onLogin with the user and profile data
+            if (onLogin) onLogin(result.user, result.profile);
           }, 1000);
         } else {
           setError('Invalid credentials. Please try again.');
@@ -118,7 +119,8 @@ const AuthPage = ({ onLogin, onAdminLogin }) => {
           }
           
           setTimeout(() => {
-            onLogin({ ...result.profile, email: result.user.email });
+            // Call onLogin with the user and profile data
+            if (onLogin) onLogin(result.user, result.profile);
           }, 2000);
         } else {
           setError('Registration failed. Please try again.');

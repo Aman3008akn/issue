@@ -2,105 +2,52 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Car, Trophy, Timer } from 'lucide-react';
+import { Car, Zap, Crown, Gem, Star, Play, RotateCcw, Flag } from 'lucide-react';
 import { useSupabase } from '../../contexts/SupabaseContext';
 
 const CarGame = ({ onBalanceChange }) => {
-  const [gameState, setGameState] = useState('betting'); // betting, racing, result
-  const [timeLeft, setTimeLeft] = useState(20);
-  const [selectedCar, setSelectedCar] = useState(null);
+  const [selectedCar, setSelectedCar] = useState('');
   const [betAmount, setBetAmount] = useState(100);
-  const [raceResults, setRaceResults] = useState([]);
-  const [winAmount, setWinAmount] = useState(0);
-  const [roundNumber, setRoundNumber] = useState(1);
-  const [raceProgress, setRaceProgress] = useState({});
+  const [raceState, setRaceState] = useState('waiting'); // waiting, racing, finished
+  const [carPositions, setCarPositions] = useState([0, 0, 0, 0]);
+  const [winner, setWinner] = useState(null);
+  const [history, setHistory] = useState([]);
   const { profile, updateUserBalance } = useSupabase();
 
-  const cars = [
-    { id: 1, name: 'Red Racer', color: '#ef4444' },
-    { id: 2, name: 'Blue Thunder', color: '#3b82f6' },
-    { id: 3, name: 'Green Machine', color: '#10b981' },
-    { id: 4, name: 'Yellow Flash', color: '#f59e0b' }
-  ];
-
   useEffect(() => {
-    startNewRound();
-  }, []);
-
-  useEffect(() => {
-    if (gameState === 'betting' && timeLeft > 0) {
-      const timer = setTimeout(() => {
-        setTimeLeft(timeLeft - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (gameState === 'betting' && timeLeft === 0) {
-      startRace();
+    if (raceState === 'racing') {
+      const interval = setInterval(() => {
+        setCarPositions(prev => {
+          const newPositions = prev.map(pos => {
+            // Random movement with some cars moving faster
+            const speed = Math.random() * 3 + 1;
+            return Math.min(pos + speed, 100);
+          });
+          
+          // Check if any car has finished
+          const finishedCarIndex = newPositions.findIndex(pos => pos >= 100);
+          if (finishedCarIndex !== -1) {
+            clearInterval(interval);
+            finishRace(finishedCarIndex);
+          }
+          
+          return newPositions;
+        });
+      }, 100);
+      
+      return () => clearInterval(interval);
     }
-  }, [timeLeft, gameState]);
+  }, [raceState]);
 
-  const startNewRound = () => {
-    setGameState('betting');
-    setTimeLeft(20);
-    setSelectedCar(null);
-    setRaceResults([]);
-    setWinAmount(0);
-    setRaceProgress({});
-  };
-
-  const startRace = () => {
-    setGameState('racing');
-    
-    // Animate race progress
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 1;
-      const newProgress = {};
-      cars.forEach(car => {
-        newProgress[car.id] = Math.min(100, progress + Math.random() * 20);
-      });
-      setRaceProgress(newProgress);
-
-      if (progress >= 100) {
-        clearInterval(interval);
-        finishRace();
-      }
-    }, 50);
-  };
-
-  const finishRace = async () => {
-    // Car game logic - Adjusted for 12% win rate
-    const results = simulateCarRace();
-    setRaceResults(results);
-    setGameState('result');
-
-    // Calculate win/loss
-    if (selectedCar) {
-      const selectedResult = results.find(r => r.id === selectedCar);
-      if (selectedResult.position === 1) {
-        const GAME_PAYOUTS = {
-          1: 12,
-          2: 6,
-          3: 4,
-          4: 2
-        };
-        const payout = betAmount * GAME_PAYOUTS[1];
-        // Update balance with winnings
-        const newBalance = await updateUserBalance(payout);
-        setWinAmount(payout);
-        onBalanceChange();
-      }
-    }
-
-    // Start new round after 5 seconds
-    setTimeout(() => {
-      setRoundNumber(prev => prev + 1);
-      startNewRound();
-    }, 5000);
-  };
-
-  const handlePlaceBet = async (carId) => {
+  const startRace = async () => {
+    // Check if user is authenticated
     if (!profile) {
       alert('Please login to play');
+      return;
+    }
+    
+    if (!selectedCar) {
+      alert('Please select a car');
       return;
     }
     
@@ -109,167 +56,204 @@ const CarGame = ({ onBalanceChange }) => {
       return;
     }
 
-    if (gameState === 'betting') {
-      // Deduct bet amount with improved balance update
+    try {
+      // Deduct bet amount
       const newBalance = await updateUserBalance(-betAmount);
-      setSelectedCar(carId);
+      setRaceState('racing');
+      setCarPositions([0, 0, 0, 0]);
+      setWinner(null);
       onBalanceChange();
+    } catch (error) {
+      console.error('Error placing bet:', error);
+      alert('Error placing bet. Please try again.');
     }
   };
 
-  // Car game logic - Adjusted for 12% win rate
-  const simulateCarRace = () => {
-    const cars = [
-      { id: 1, name: 'Red Racer', color: '#ef4444' },
-      { id: 2, name: 'Blue Thunder', color: '#3b82f6' },
-      { id: 3, name: 'Green Machine', color: '#10b981' },
-      { id: 4, name: 'Yellow Flash', color: '#f59e0b' }
-    ];
+  const finishRace = async (winningCarIndex) => {
+    setRaceState('finished');
+    setWinner(winningCarIndex);
     
-    // Shuffle and assign positions
-    const shuffled = [...cars].sort(() => Math.random() - 0.5);
+    const result = {
+      car: winningCarIndex,
+      timestamp: new Date().toISOString()
+    };
     
-    // Adjusted to make winning positions less likely (12% win rate)
-    return shuffled.map((car, index) => ({
-      ...car,
-      position: index + 1,
-      time: (8.0 + Math.random() * 12).toFixed(2) // Slower times to reduce winning chances
-    }));
+    setHistory(prev => [result, ...prev.slice(0, 9)]);
+    
+    // Check if user won
+    if (selectedCar === `car${winningCarIndex}`) {
+      // Higher payout for riskier positions
+      const multiplier = winningCarIndex === 0 ? 2 : winningCarIndex === 1 ? 3 : winningCarIndex === 2 ? 5 : 10;
+      const winAmount = betAmount * multiplier;
+      
+      try {
+        // Add winnings to user balance
+        const newBalance = await updateUserBalance(winAmount);
+        onBalanceChange();
+      } catch (error) {
+        console.error('Error updating balance:', error);
+        alert('Error updating balance. Please try again.');
+      }
+    }
   };
+
+  const resetRace = () => {
+    setRaceState('waiting');
+    setSelectedCar('');
+    setCarPositions([0, 0, 0, 0]);
+    setWinner(null);
+  };
+
+  const getCarColor = (index) => {
+    const colors = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500'];
+    return colors[index];
+  };
+
+  const getCarName = (index) => {
+    const names = ['Red Racer', 'Blue Bullet', 'Green Machine', 'Yellow Flash'];
+    return names[index];
+  };
+
+  // Show loading state if profile is not loaded yet
+  if (profile === null) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-white text-xl">Loading game...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Main Game Area */}
         <div className="lg:col-span-2">
-          <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-purple-500/30 overflow-hidden">
+          <Card className="bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 border-2 border-purple-500/50 overflow-hidden">
             <div className="p-6">
-              {/* Timer and Round Info */}
               <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <Timer className="w-6 h-6 text-purple-400" />
-                  <div>
-                    <div className="text-sm text-gray-400">Race #{roundNumber}</div>
-                    <div className="text-2xl font-bold text-white">
-                      {gameState === 'betting' ? `${timeLeft}s` : gameState === 'racing' ? 'Racing!' : 'Results'}
-                    </div>
-                  </div>
+                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <Car className="w-6 h-6 text-purple-400" />
+                  Car Racing
+                </h2>
+                <div className="flex items-center gap-2">
+                  <Gem className="w-5 h-5 text-yellow-400" />
+                  <span className="text-yellow-400 font-bold">PREMIUM</span>
                 </div>
-                {gameState === 'betting' && (
-                  <div className="text-yellow-400 animate-pulse font-bold">
-                    Choose your car!
-                  </div>
-                )}
               </div>
 
               {/* Race Track */}
-              <div className="bg-gray-900/50 rounded-lg p-6 min-h-96">
-                {gameState === 'result' ? (
-                  <div className="space-y-4">
-                    <div className="text-center mb-6">
-                      <Trophy className="w-16 h-16 text-yellow-400 mx-auto mb-3" />
-                      <h3 className="text-3xl font-bold text-white mb-2">Race Results</h3>
-                      {selectedCar && raceResults.find(r => r.id === selectedCar)?.position === 1 && (
-                        <div className="text-2xl text-green-400 font-bold animate-bounce">
-                          YOU WON ₹{winAmount.toFixed(2)}!
-                        </div>
-                      )}
-                    </div>
-                    {raceResults.map((car) => (
-                      <div
-                        key={car.id}
-                        className={`flex items-center gap-4 p-4 rounded-lg ${
-                          car.position === 1 ? 'bg-yellow-500/20 border-2 border-yellow-500' : 'bg-gray-800/50'
-                        } ${selectedCar === car.id ? 'ring-2 ring-purple-500' : ''}`}
-                      >
-                        <div className="text-2xl font-bold text-white w-8">
-                          {car.position === 1 ? '🥇' : car.position === 2 ? '🥈' : car.position === 3 ? '🥉' : car.position}
-                        </div>
-                        <Car className="w-8 h-8" style={{ color: car.color }} />
-                        <div className="flex-1">
-                          <div className="text-white font-bold">{car.name}</div>
-                          <div className="text-gray-400 text-sm">Time: {car.time}s</div>
-                        </div>
-                        {selectedCar === car.id && (
-                          <div className="text-purple-400 text-sm font-bold">YOUR BET</div>
-                        )}
-                      </div>
+              <div className="mb-8">
+                <div className="relative h-64 bg-gradient-to-b from-gray-800 to-gray-900 rounded-xl border-2 border-gray-700 overflow-hidden">
+                  {/* Finish Line */}
+                  <div className="absolute right-4 top-0 bottom-0 w-1 bg-gradient-to-b from-white to-gray-300 flex flex-col">
+                    {Array.from({length: 20}).map((_, i) => (
+                      <div key={i} className={`h-4 w-full ${i % 2 === 0 ? 'bg-white' : 'bg-gray-300'}`} />
                     ))}
                   </div>
-                ) : gameState === 'racing' ? (
-                  <div className="space-y-6">
-                    <div className="text-center mb-4">
-                      <div className="text-3xl font-bold text-white animate-pulse">Racing in Progress!</div>
+                  
+                  {/* Cars */}
+                  {carPositions.map((position, index) => (
+                    <div
+                      key={index}
+                      className={`absolute top-${index * 16 + 8} h-12 w-12 ${getCarColor(index)} rounded-lg flex items-center justify-center transition-all duration-100`}
+                      style={{ left: `${position}%`, transform: 'translateX(-50%)' }}
+                    >
+                      <Car className="w-8 h-8 text-white" />
                     </div>
-                    {cars.map((car) => (
-                      <div key={car.id} className="space-y-2">
-                        <div className="flex items-center gap-3">
-                          <Car className="w-6 h-6" style={{ color: car.color }} />
-                          <div className="text-white font-bold flex-1">{car.name}</div>
-                          <div className="text-gray-400 text-sm">{Math.round(raceProgress[car.id] || 0)}%</div>
+                  ))}
+                  
+                  {/* Winner Banner */}
+                  {raceState === 'finished' && winner !== null && (
+                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="text-4xl font-bold text-white mb-2">
+                          {selectedCar === `car${winner}` ? (
+                            <span className="text-green-400">You Won!</span>
+                          ) : (
+                            <span className="text-red-400">Race Finished</span>
+                          )}
                         </div>
-                        <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-100"
-                            style={{
-                              width: `${raceProgress[car.id] || 0}%`,
-                              backgroundColor: car.color
-                            }}
-                          />
+                        <div className="text-2xl text-white">
+                          Winner: <span className={getCarColor(winner)}>{getCarName(winner)}</span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-4">
-                    {cars.map((car) => (
-                      <button
-                        key={car.id}
-                        onClick={() => handlePlaceBet(car.id)}
-                        disabled={selectedCar !== null}
-                        className={`group p-6 rounded-xl bg-gray-800 hover:bg-gray-700 border-2 ${
-                          selectedCar === car.id ? 'border-purple-500 scale-105' : 'border-gray-700'
-                        } transition-all duration-300 disabled:opacity-50`}
-                      >
-                        <Car className="w-16 h-16 mx-auto mb-3" style={{ color: car.color }} />
-                        <div className="text-white font-bold text-lg mb-1">{car.name}</div>
-                        <div className="text-gray-400 text-sm">Win: 3.5x</div>
-                        {selectedCar === car.id && (
-                          <div className="mt-2 bg-purple-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-                            SELECTED
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Car Selection */}
+              <div>
+                <h3 className="text-white font-bold mb-3">Select Your Car</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {Array.from({length: 4}).map((_, index) => (
+                    <Button
+                      key={index}
+                      onClick={() => setSelectedCar(`car${index}`)}
+                      className={`${getCarColor(index)} ${selectedCar === `car${index}` ? 'ring-4 ring-white/50 scale-105' : ''} h-16 transition-all duration-300 hover:scale-105 flex flex-col items-center justify-center`}
+                      disabled={raceState === 'racing' || raceState === 'finished'}
+                    >
+                      <Car className="w-6 h-6 text-white" />
+                      <span className="text-white font-bold text-sm mt-1">
+                        {getCarName(index)}
+                      </span>
+                      <span className="text-white text-xs">
+                        x{index === 0 ? 2 : index === 1 ? 3 : index === 2 ? 5 : 10}
+                      </span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* History */}
+          <Card className="mt-4 bg-gradient-to-r from-gray-800/80 to-gray-900/80 border-2 border-purple-500/30 p-4 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <Flag className="w-5 h-5 text-purple-400" />
+              <h3 className="text-white font-bold">Recent Races</h3>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {history.map((result, index) => (
+                <div
+                  key={index}
+                  className={`px-3 py-1 rounded-full text-sm font-bold border ${getCarColor(result.car)} text-white`}
+                >
+                  {getCarName(result.car)}
+                </div>
+              ))}
             </div>
           </Card>
         </div>
 
         {/* Betting Panel */}
         <div className="space-y-4">
-          <Card className="bg-gray-800/80 border-gray-700 p-6">
-            <h3 className="text-white font-bold text-xl mb-4">Bet Amount</h3>
+          <Card className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 border-2 border-purple-500/50 p-6 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <Crown className="w-6 h-6 text-yellow-400" />
+              <h3 className="text-white font-bold text-xl">Place Your Bet</h3>
+            </div>
             
             <div className="space-y-4">
               <div>
-                <label className="text-gray-400 text-sm mb-2 block">Amount (₹)</label>
+                <label className="text-gray-300 text-sm mb-2 block flex items-center gap-2">
+                  <Gem className="w-4 h-4 text-purple-400" />
+                  Bet Amount (₹)
+                </label>
                 <Input
                   type="number"
                   value={betAmount}
                   onChange={(e) => setBetAmount(parseFloat(e.target.value) || 0)}
-                  className="bg-gray-700 border-gray-600 text-white"
-                  disabled={selectedCar !== null}
+                  className="bg-gray-700/50 border-2 border-purple-500/30 text-white placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 transition-all"
+                  disabled={raceState === 'racing' || raceState === 'finished'}
                 />
-                <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="flex gap-2 mt-2">
                   {[50, 100, 500, 1000].map((amount) => (
                     <Button
                       key={amount}
                       onClick={() => setBetAmount(amount)}
-                      className="bg-gray-700 hover:bg-gray-600 text-xs"
-                      disabled={selectedCar !== null}
+                      className="flex-1 bg-gradient-to-r from-purple-700/80 to-pink-700/80 hover:from-purple-600 hover:to-pink-600 text-xs border border-purple-500/30 transition-all hover:scale-105"
+                      disabled={raceState === 'racing' || raceState === 'finished'}
                     >
                       {amount}
                     </Button>
@@ -277,28 +261,49 @@ const CarGame = ({ onBalanceChange }) => {
                 </div>
               </div>
 
-              {selectedCar && (
-                <div className="p-4 bg-purple-900/30 rounded-lg border border-purple-500/30">
-                  <div className="text-sm text-gray-400 mb-1">Your Bet</div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Car className="w-6 h-6" style={{ color: cars.find(c => c.id === selectedCar).color }} />
-                      <span className="text-white font-bold">{cars.find(c => c.id === selectedCar).name}</span>
-                    </div>
-                    <span className="text-yellow-400 font-bold">₹{betAmount}</span>
-                  </div>
-                </div>
-              )}
+              <div className="flex gap-2">
+                <Button
+                  onClick={startRace}
+                  className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-3 border border-green-500/50 shadow-lg hover:shadow-green-500/20 transition-all hover:scale-105"
+                  disabled={raceState === 'racing' || raceState === 'finished' || !selectedCar}
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  Start Race
+                </Button>
+                
+                <Button
+                  onClick={resetRace}
+                  className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white font-bold py-3 border border-gray-500/50 transition-all hover:scale-105"
+                  disabled={raceState === 'waiting'}
+                >
+                  <RotateCcw className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-500/30 p-4">
-            <h4 className="text-white font-bold mb-2">Race Info</h4>
-            <div className="text-sm text-gray-300 space-y-1">
-              <p>• Choose your favorite car</p>
-              <p>• Bet on 1st position</p>
-              <p>• Win 3.5x your bet!</p>
-              <p>• New race every 25 seconds</p>
+          <Card className="bg-gradient-to-br from-purple-900/40 to-pink-900/40 border-2 border-purple-500/50 p-4 backdrop-blur-sm">
+            <h4 className="text-white font-bold mb-3 flex items-center gap-2">
+              <Star className="w-5 h-5 text-yellow-400" />
+              Game Rules
+            </h4>
+            <div className="text-sm text-gray-300 space-y-2">
+              <p className="flex items-center gap-2">
+                <Car className="w-4 h-4 text-purple-400" />
+                Select a car to bet on
+              </p>
+              <p className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-yellow-400" />
+                Higher risk cars = Higher rewards
+              </p>
+              <p className="flex items-center gap-2">
+                <Crown className="w-4 h-4 text-yellow-400" />
+                Red Racer (x2) - Most likely to win
+              </p>
+              <p className="flex items-center gap-2">
+                <Gem className="w-4 h-4 text-pink-400" />
+                Yellow Flash (x10) - Highest payout
+              </p>
             </div>
           </Card>
         </div>

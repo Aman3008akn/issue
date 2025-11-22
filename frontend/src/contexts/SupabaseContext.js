@@ -261,6 +261,7 @@ export const SupabaseProvider = ({ children }) => {
     user,
     profile,
     loading,
+    supabase, // Add the supabase instance to the context value
     signUp,
     signIn,
     signOut,
