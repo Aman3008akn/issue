@@ -98,9 +98,11 @@ export const SupabaseProvider = ({ children }) => {
 
         if (error) throw error;
         setProfile(data);
+        return data;
       }
     } catch (error) {
       console.error('Error creating user profile:', error);
+      throw error;
     }
   };
 
@@ -112,7 +114,13 @@ export const SupabaseProvider = ({ children }) => {
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Handle specific Supabase auth errors
+        if (error.message.includes('already exists')) {
+          throw new Error('A user with this email already exists. Please login instead.');
+        }
+        throw error;
+      }
 
       // If signup is successful, create user profile in the users table
       if (data.user) {
@@ -161,7 +169,13 @@ export const SupabaseProvider = ({ children }) => {
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Handle specific Supabase auth errors
+        if (error.message.includes('Invalid login credentials')) {
+          throw new Error('Invalid email or password. Please check your credentials and try again.');
+        }
+        throw error;
+      }
 
       if (data.user) {
         // Get user profile
@@ -225,7 +239,10 @@ export const SupabaseProvider = ({ children }) => {
         amount: amount
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating user balance:', error);
+        throw error;
+      }
       
       // Update local profile
       setProfile(prev => ({
