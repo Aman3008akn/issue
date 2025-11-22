@@ -35,6 +35,7 @@ const Deposits = ({ depositRequests, onUpdateDeposits, onUpdateUsers, onUpdateTr
         .select()
         .single();
       if (depositResult.error) throw depositResult.error;
+      const updatedReq = depositResult.data; // Define updatedReq here
 
       // 3) Add transaction history entry
       const newTransaction = {
@@ -53,6 +54,7 @@ const Deposits = ({ depositRequests, onUpdateDeposits, onUpdateUsers, onUpdateTr
         .select()
         .single();
       if (transactionResult.error) throw transactionResult.error;
+      const txData = transactionResult.data; // Define txData here
 
       // Update local states
       onUpdateUsers((prev) =>

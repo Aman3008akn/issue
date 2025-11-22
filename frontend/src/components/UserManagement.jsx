@@ -73,6 +73,7 @@ const UserManagement = ({ users, onUpdateUsers, onUpdateTransactions }) => {
         .single();
 
       if (transactionResult.error) throw transactionResult.error;
+      const transactionData = transactionResult.data; // Define transactionData here
 
       onUpdateUsers((prev) =>
         prev.map((u) =>
@@ -124,8 +125,7 @@ const UserManagement = ({ users, onUpdateUsers, onUpdateTransactions }) => {
       <form onSubmit={handleAddBalance} className="space-y-4">
         <div>
           <label className="text-gray-400 text-sm mb-2 block">
-            Select User
-          </label>
+            Select User</label>
           <select
             value={selectedUser}
             onChange={(e) => setSelectedUser(e.target.value)}
